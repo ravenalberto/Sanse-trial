@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/HallwayScene01.unity
+    guid: 2cda990e2423bbf4892e6590ba056729
+  - enabled: 1
+    path: Assets/Scenes/ClassroomScene01.unity
+    guid: 9ce06070fbdc6ce43abe742afc3602d2
+  - enabled: 1
+    path: Assets/Scenes/ChairPuzzleScene.unity
+    guid: 18a3e94bcec8a9f4d9102b10894c028f
+  - enabled: 1
+    path: Assets/Scenes/StaircaseScene01.unity
+    guid: d24bf832d931cfb4ca346e3e2321d46d
+  - enabled: 1
+    path: Assets/Scenes/BlockPuzzleScene.unity
+    guid: fb0eb9c4be2cf414da6be6f461c68724
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 3590b91b4603b465dbb4216d601bff33, type: 3}
