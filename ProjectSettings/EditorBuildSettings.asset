@@ -20,5 +20,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/BlockPuzzleScene.unity
     guid: fb0eb9c4be2cf414da6be6f461c68724
+  - enabled: 1
+    path: Assets/Scenes/Corridor_Maze.unity
+    guid: dc6662519372f3f4292619f10e2f4a2a
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 3590b91b4603b465dbb4216d601bff33, type: 3}
