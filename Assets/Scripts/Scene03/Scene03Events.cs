@@ -23,6 +23,8 @@ public class Scene03Events : MonoBehaviour
 
 	public BlockPuzzleManager puzzleManager;
 
+	int memoryCount = 0;
+
 
 	public int marcTrust = 0;
 	public int marcStayPoints = 0;
@@ -764,6 +766,91 @@ public class Scene03Events : MonoBehaviour
 	}
 
 
+	IEnumerator Event_TransitionToGameplay()
+	{
+		nextButton.SetActive(false);
+
+		charKuh.SetActive(true);
+		SetExpression(charKuh, kuhNeutral);
+
+		StartDialogue("", "…That sound again.");
+
+		yield return WaitForText();
+
+		StartDialogue("", "Why does it feel closer this time?");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…Like it’s calling.");
+
+		yield return WaitForText();
+
+		StartDialogue("Kuh", "Hello?");
+
+		yield return WaitForText();
+
+		StartDialogue("Kuh", "…Guys?");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…Someone’s up there.");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…They’re not answering.");
+
+		yield return WaitForText();
+
+		StartDialogue("Kuh", "…Wait.");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…They’re behind me.");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…Right?");
+
+		yield return WaitForText();
+
+		StartDialogue("Kuh", "…I’m right here.");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…They’ll catch up.");
+
+		yield return WaitForText();
+
+		StartDialogue("", "…It’s fine.");
+
+		yield return WaitForText();
+
+		StartDialogue("Kuh", "…Why does it feel like I’ve been here before?");
+
+		yield return WaitForText();
+
+		// 🎬 TRANSITION
+		fadeOut.SetActive(true);
+
+		CanvasGroup fadeCanvas = fadeOut.GetComponent<CanvasGroup>();
+
+		float t = 0;
+		while (t < 1)
+		{
+			t += Time.deltaTime;
+			fadeCanvas.alpha = t;
+			yield return null;
+		}
+
+		yield return new WaitForSeconds(0.5f);
+
+		SceneManager.LoadScene("PacmanChaseStair2");
+	}
+
+
+
+	
+
 
 
 	void SetExpression(GameObject character, Sprite expression)
@@ -809,12 +896,33 @@ public class Scene03Events : MonoBehaviour
 
 		TextCreator.runTextPrint = true;
 	}
+	void ResumeGameplay()
+	{
+		vnUI.SetActive(false);
 
+		Time.timeScale = 1f; // resume game
+
+		Debug.Log("Back to gameplay");
+
+		if (memoryCount >= 4)
+		{
+			Debug.Log("All memories recovered!");
+
+			// 👉 transition to full VN
+			// SceneManager.LoadScene("YourVNScene");
+		}
+	}
 
 
 
 	public void NextButton()
 	{
+		if (eventPos == 100)
+		{
+			ResumeGameplay();
+			return;
+		}
+
 		if (eventPos == 1) StartCoroutine(EventOne());
 		if (eventPos == 2) StartCoroutine(EventTwo());
 		if (eventPos == 3) StartCoroutine(EventThree());
@@ -855,6 +963,10 @@ public class Scene03Events : MonoBehaviour
 		if (eventPos == 30) StartCoroutine(EventThirty());
 		if (eventPos == 31) StartCoroutine(EventThirtyOne());
 		if (eventPos == 32) StartCoroutine(EventThirtyTwo());
+
+		if (eventPos == 33) StartCoroutine(Event_TransitionToGameplay());
+
+
 
 
 	}

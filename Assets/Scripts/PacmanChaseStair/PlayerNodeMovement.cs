@@ -21,8 +21,8 @@ public class PlayerNodeMovement : MonoBehaviour
 		targetNode = currentNode;
 		transform.position = currentNode.transform.position;
 
-		currentDirection = Vector2.right;
-		desiredDirection = Vector2.right;
+		currentDirection = Vector2.left;
+		desiredDirection = Vector2.left;
 
 		MoveForward();
 		UpdateAnimation(); // 👈 start anim immediately
@@ -32,7 +32,8 @@ public class PlayerNodeMovement : MonoBehaviour
 	{
 		GetInput();
 		MoveToNode();
-		EatPellet(); // 👈 THIS FIXES EVERYTHING
+		EatPellet();
+		CheckMemoryOrb(); // 👈 ADD THIS
 	}
 
 	void GetInput()
@@ -53,7 +54,7 @@ public class PlayerNodeMovement : MonoBehaviour
 				moveSpeed * Time.deltaTime
 			);
 
-			if (Vector3.Distance(transform.position, targetNode.transform.position) < 0.01f)
+			if (Vector3.Distance(transform.position, targetNode.transform.position) < 0.08f)
 			{
 				currentNode = targetNode;
 
@@ -62,15 +63,8 @@ public class PlayerNodeMovement : MonoBehaviour
 				UpdateAnimation(); // 👈 update when direction changes
 			}
 
-			// 🍒 Eat pellet if exists
-			Pellet pellet = currentNode.GetComponentInChildren<Pellet>();
 
-			if (pellet != null && pellet.gameObject.activeSelf)
-			{
-				pellet.Eat();
-			pelletsEaten++;
-				Debug.Log("Pellets: " + pelletsEaten);
-			}
+			
 		}
 	}
 
@@ -81,6 +75,8 @@ public class PlayerNodeMovement : MonoBehaviour
 		if (pellet != null && pellet.gameObject.activeSelf)
 		{
 			pellet.Eat();
+			pelletsEaten++;
+			Debug.Log("Pellets: " + pelletsEaten);
 		}
 	}
 
@@ -102,6 +98,16 @@ public class PlayerNodeMovement : MonoBehaviour
 		if (nextNode != null)
 		{
 			targetNode = nextNode;
+		}
+	}
+
+	void CheckMemoryOrb()
+	{
+		MemoryOrb orb = currentNode.GetComponentInChildren<MemoryOrb>();
+
+		if (orb != null && orb.gameObject.activeSelf)
+		{
+			orb.Activate();
 		}
 	}
 
