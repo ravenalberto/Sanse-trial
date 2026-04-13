@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class NodeConnector : MonoBehaviour
 {
-	public float connectionDistance = 1.1f;
+	public float connectionDistance = 3f;
 
 	[ContextMenu("Connect Nodes")]
 	void ConnectNodes()
@@ -23,7 +23,7 @@ public class NodeConnector : MonoBehaviour
 				Vector2 dir = other.transform.position - node.transform.position;
 
 				// Horizontal
-				if (Mathf.Abs(dir.y) < 0.1f)
+				if (Mathf.Abs(dir.y) < 0.2f)
 				{
 					if (dir.x > 0 && dir.magnitude < connectionDistance)
 						node.right = other;
@@ -32,8 +32,9 @@ public class NodeConnector : MonoBehaviour
 						node.left = other;
 				}
 
-				// Vertical
-				if (Mathf.Abs(dir.x) < 0.1f)
+				//vertical
+
+				if (Mathf.Abs(dir.x) < 0.2f)
 				{
 					if (dir.y > 0 && dir.magnitude < connectionDistance)
 						node.up = other;
