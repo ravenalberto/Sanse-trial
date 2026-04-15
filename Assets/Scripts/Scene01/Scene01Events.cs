@@ -1,189 +1,147 @@
 using System.Collections;
 using System.Collections.Generic;
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using TMPro;
 
 public class Scene01Events : MonoBehaviour
 {
-
+    [Header("UI References")]
     public GameObject fadeScreenIn;
+    public GameObject fadeOut;
+    public GameObject textBox;
+    public GameObject mainTextObject;
+    public GameObject nextButton;
+    public TMP_Text charNameText;
+
+    [Header("Characters")]
     public GameObject charKuh;
     public GameObject charCristel;
-    public GameObject textBox;
+    public GameObject charDarlene;
+    public GameObject charMarc;
+    public GameObject charRaven;
 
+    [Header("Settings")]
+    [SerializeField] private int eventPos = 0;
+    private int currentTextLength;
+    private bool isTyping = false;
 
-    [SerializeField] string textToSpeak;
-    [SerializeField] int currentTextLength;
-    [SerializeField] int textLength;
-    [SerializeField] GameObject mainTextObject;
-    [SerializeField] GameObject nextButton;
-    [SerializeField] int eventPos = 0;
-    [SerializeField] GameObject charName;
-	[SerializeField] GameObject fadeOut;
+    // A simple class to hold dialogue data
+    [System.Serializable]
+    public class DialogueLine
+    {
+        public string name;
+        public string text;
+        public bool showKuh;
+        public bool showCristel;
+        public bool triggerFadeOut; // Used for scene transitions
+    }
 
+    public List<DialogueLine> dialogueList = new List<DialogueLine>();
 
+    void Start()
+    {
+        // Initialize Scene
+        mainTextObject.SetActive(false);
+        nextButton.SetActive(false);
+        textBox.SetActive(false);
+
+        // Build the dialogue list based on your script
+        SetupDialogue();
+
+        StartCoroutine(OpeningSequence());
+    }
 
     void Update()
     {
-        textLength = TextCreator.charCount;
+        // Syncing with your existing TextCreator logic
+        if (TextCreator.charCount >= currentTextLength && isTyping)
+        {
+            isTyping = false;
+            nextButton.SetActive(true);
+        }
     }
 
-
-
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    void SetupDialogue()
     {
-        StartCoroutine(EventStarter());
+        // LOBBY
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "Psst—Tetel!", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Cristel", text = "Ah! Kuh, andiyan ka pala!", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Cristel", text = "San ka na naman galing? Nasa room na sila.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "Dapat nandun na nga eh… pero walang sumasagot sa taas.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Cristel", text = "Ha? Baka tulog lang sila?", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "Hindi eh… kumatok ako. Ilang beses. …Tahimik talaga. As in wala.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "Tsaka may narinig ako… parang may naglalakad sa hallway.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "…pero pag tingin ko—wala naman.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Cristel", text = "Uy stop… ang creepy mo na.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "Seryoso ako.", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Cristel", text = "Wait… bakit parang ang dilim bigla?", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "…Napansin mo rin?", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Cristel", text = "Wait—narinig mo ‘yon?", showKuh = true, showCristel = true });
+        dialogueList.Add(new DialogueLine { name = "Kuh", text = "Tetel… bilis. Tara na.", showKuh = true, showCristel = true, triggerFadeOut = true });
+
+        // Add more for Scene 2 and Scene 3 here...
     }
 
-    IEnumerator EventStarter()
+    IEnumerator OpeningSequence()
     {
         yield return new WaitForSeconds(2);
         fadeScreenIn.SetActive(false);
         charCristel.SetActive(true);
-        yield return new WaitForSeconds(2);
-		//text funtion will go here
-        mainTextObject.SetActive(true);
-		textToSpeak = "…Where is everyone?";
-		TextCreator.fullText = textToSpeak;
-		TextCreator.charCount = 0;
-		TextCreator.runTextPrint = true;
-		currentTextLength = textToSpeak.Length;
-        yield return new WaitForSeconds(0.05f);
+        yield return new WaitForSeconds(1);
 
-
-		yield return new WaitUntil(() => textLength >= currentTextLength);
-		yield return new WaitForSeconds(0.05f);
-        nextButton.SetActive(true);
-        eventPos = 1;
-
-
+        // First Line (Automatic)
+        PlayDialogue(0);
     }
 
-    IEnumerator EventOne()
+    public void NextButton()
     {
-
-        // event 1
-
-        nextButton.SetActive(false);
-		textBox.SetActive(true);
-        charName.GetComponent<TMPro.TMP_Text>().text = "Kuh";
-
-		textToSpeak = "Psst. Tetel!";
-		TextCreator.fullText = textToSpeak;
-		TextCreator.charCount = 0;
-		TextCreator.runTextPrint = true;
-
-		currentTextLength = textToSpeak.Length;
-		yield return new WaitForSeconds(0.05f);
-		yield return new WaitForSeconds(1);
-
-		yield return new WaitUntil(() => textLength >= currentTextLength);
-		yield return new WaitForSeconds(0.05f);
-		//yield return new WaitForSeconds(2);
-		charKuh.SetActive(true);
-		nextButton.SetActive(true);
-        eventPos = 2;
-
-
-	}
-
-	IEnumerator EventTwo()
-	{
-
-		// event 2
-
-		nextButton.SetActive(false);
-		textBox.SetActive(true);
-		charName.GetComponent<TMPro.TMP_Text>().text = "Cristel";
-
-		textToSpeak = "Ah! Kuh, andiyan ka pala.";
-		TextCreator.fullText = textToSpeak;
-		TextCreator.charCount = 0;
-		TextCreator.runTextPrint = true;
-
-		currentTextLength = textToSpeak.Length;
-
-		yield return new WaitForSeconds(0.05f);
-		yield return new WaitForSeconds(1);
-
-		yield return new WaitUntil(() => textLength >= currentTextLength);
-		yield return new WaitForSeconds(0.05f);
-		//yield return new WaitForSeconds(2);
-		charKuh.SetActive(true);
-		nextButton.SetActive(true);
-		eventPos = 3;
-
-
-	}
-
-	IEnumerator EventThree()
-	{
-
-		// event 3 
-
-		nextButton.SetActive(false);
-		textBox.SetActive(true);
-		charName.GetComponent<TMPro.TMP_Text>().text = "Kuh";
-
-		textToSpeak = "San ka naman nanggaling ngayon? Nasa room sila.";
-		TextCreator.fullText = textToSpeak;
-		TextCreator.charCount = 0;
-		TextCreator.runTextPrint = true;
-		currentTextLength = textToSpeak.Length;
-
-		yield return new WaitForSeconds(0.05f);
-		yield return new WaitForSeconds(1);
-
-		yield return new WaitUntil(() => textLength >= currentTextLength);
-		yield return new WaitForSeconds(0.05f);
-		//yield return new WaitForSeconds(2);
-		charKuh.SetActive(true);
-		nextButton.SetActive(true);
-
-		eventPos = 4;
-
-
-	}
-
-	IEnumerator EventFour()
-	{
-
-		// event 4 
-
-		nextButton.SetActive(false);
-		textBox.SetActive(true);
-		
-		charKuh.SetActive(true);
-		fadeOut.SetActive(true);
-		yield return new WaitForSeconds(2);
-
-		eventPos = 4;
-		SceneManager.LoadScene(1);
-
-
-	}
-
-
-
-	public void NextButton()
-    {
-        if (eventPos == 1)
+        eventPos++;
+        if (eventPos < dialogueList.Count)
         {
-			StartCoroutine(EventOne());
-		}
-		if (eventPos == 2)
-		{
-			StartCoroutine(EventTwo());
-		}
-		if (eventPos == 3)
-		{
-			StartCoroutine(EventThree());
-		}
-		if (eventPos == 4)
-		{
-			StartCoroutine(EventFour());
-		}
-	}
+            if (dialogueList[eventPos].triggerFadeOut)
+            {
+                StartCoroutine(TransitionToNextScene());
+            }
+            else
+            {
+                PlayDialogue(eventPos);
+            }
+        }
+        else
+        {
+            // End of dialogue logic
+            SceneManager.LoadScene(1);
+        }
+    }
+
+    void PlayDialogue(int index)
+    {
+        nextButton.SetActive(false);
+        textBox.SetActive(true);
+        mainTextObject.SetActive(true);
+
+        DialogueLine line = dialogueList[index];
+
+        charNameText.text = line.name;
+        charKuh.SetActive(line.showKuh);
+        charCristel.SetActive(line.showCristel);
+
+        // Send to your TextCreator script
+        TextCreator.fullText = line.text;
+        TextCreator.charCount = 0;
+        TextCreator.runTextPrint = true;
+
+        currentTextLength = line.text.Length;
+        isTyping = true;
+    }
+
+    IEnumerator TransitionToNextScene()
+    {
+        nextButton.SetActive(false);
+        fadeOut.SetActive(true);
+        yield return new WaitForSeconds(2);
+        // If you want to load a new Unity Scene:
+        SceneManager.LoadScene(1);
+    }
 }
