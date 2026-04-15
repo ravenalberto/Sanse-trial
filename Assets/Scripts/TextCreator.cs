@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Security.Permissions;
@@ -12,54 +12,54 @@ public class TextCreator : MonoBehaviour
 
 
 
-	public static string fullText;
+    public static string fullText;
 
 
 
 
-	[SerializeField] string transferText;
+    [SerializeField] string transferText;
     [SerializeField] int internalCount;
 
 
 
 
 
-	// Update is called once per frame
-	void Update()
-	{
-		if (runTextPrint == true)
-		{
-			runTextPrint = false;
+    // Update is called once per frame
+    void Update()
+    {
+        if (runTextPrint == true)
+        {
+            runTextPrint = false;
 
-			viewText = GetComponent<TMPro.TMP_Text>();
+            viewText = GetComponent<TMPro.TMP_Text>();
 
-			transferText = fullText;
+            transferText = fullText;
 
-			StopAllCoroutines(); // 🔥 VERY IMPORTANT
-			StartCoroutine(RollText());
-		}
-	}
+            StopAllCoroutines(); // 🔥 VERY IMPORTANT
+            StartCoroutine(RollText());
+        }
+    }
 
-	IEnumerator RollText()
-	{
-		charCount = 0;
-		viewText.text = "";
+    IEnumerator RollText()
+    {
+        charCount = 0;
+        viewText.text = "";
 
-		foreach (char c in transferText)
-		{
-			viewText.text += c;
-			charCount++; // 🔥 THIS IS THE IMPORTANT PART
-			yield return new WaitForSeconds(0.03f);
-		}
-	}
+        foreach (char c in transferText)
+        {
+            viewText.text += c;
+            charCount++; // 🔥 THIS IS THE IMPORTANT PART
+            yield return new WaitForSeconds(0.03f);
+        }
+    }
 
-	public static void CompleteText()
-	{
-		if (viewText != null)
-		{
-			viewText.text = viewText.text; // force full text
-			charCount = viewText.text.Length;
-		}
-	}
+    public static void CompleteText()
+    {
+        if (viewText != null)
+        {
+            viewText.text = viewText.text; // force full text
+            charCount = viewText.text.Length;
+        }
+    }
 
 }
