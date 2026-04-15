@@ -15,19 +15,29 @@ public class DraggableChair : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
 	private Vector2 originalPosition;
 
-	private void Awake()
+
+    public AudioSource audioSource;
+
+    public AudioClip dragSound;
+    public AudioClip dropSound;
+    public AudioClip returnSound; // optional (when it goes back)
+
+    private void Awake()
 	{
 		rectTransform = GetComponent<RectTransform>();
 		canvas = GetComponentInParent<Canvas>();
 		originalPosition = rectTransform.anchoredPosition;
 	}
 
-	public void OnBeginDrag(PointerEventData eventData)
-	{
-		transform.SetAsLastSibling();
-	}
+    public void OnBeginDrag(PointerEventData eventData)
+    {
+        transform.SetAsLastSibling();
 
-	public void OnDrag(PointerEventData eventData)
+        if (audioSource != null && dragSound != null)
+            audioSource.PlayOneShot(dragSound, 0.5f); // softer
+    }
+
+    public void OnDrag(PointerEventData eventData)
 	{
 		rectTransform.anchoredPosition += eventData.delta / canvas.scaleFactor;
 	}
@@ -36,59 +46,66 @@ public class DraggableChair : MonoBehaviour, IBeginDragHandler, IDragHandler, IE
 
 	public GridSlot[] slots;
 
-	public void OnEndDrag(PointerEventData eventData)
-	{
-		float closestDistance = float.MaxValue;
-		GridSlot closestSlot = null;
+    public void OnEndDrag(PointerEventData eventData)
+    {
+        float closestDistance = float.MaxValue;
+        GridSlot closestSlot = null;
 
-		foreach (GridSlot slot in slots)
-		{
-			float distance = Vector2.Distance(
-				rectTransform.position,
-				slot.transform.position
-			);
+        // 🔍 FIND CLOSEST SLOT
+        foreach (GridSlot slot in slots)
+        {
+            float distance = Vector2.Distance(
+                rectTransform.position,
+                slot.transform.position
+            );
 
-			if (distance < closestDistance)
-			{
-				closestDistance = distance;
-				closestSlot = slot;
-			}
-		}
+            if (distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestSlot = slot;
+            }
+        }
 
-		// SNAP IF VALID
-		if (closestSlot != null && closestDistance < 150f && closestSlot.currentChair == null)
-		{
-			// CLEAR OLD SLOT
-			if (currentSlot != null)
-			{
-				currentSlot.currentChair = null;
-			}
+        // ✅ SNAP IF VALID
+        if (closestSlot != null && closestDistance < 150f && closestSlot.currentChair == null)
+        {
+            // clear old
+            if (currentSlot != null)
+            {
+                currentSlot.currentChair = null;
+            }
 
-			// SNAP POSITION
-			rectTransform.position = closestSlot.transform.position;
+            // snap
+            rectTransform.position = closestSlot.transform.position;
 
-			// ASSIGN NEW SLOT
-			closestSlot.currentChair = this;
-			currentSlot = closestSlot;
+            closestSlot.currentChair = this;
+            currentSlot = closestSlot;
 
-			isInSlot = true;
+            isInSlot = true;
 
-			Debug.Log(chairName + " placed in " + closestSlot.name);
-		}
-		else
-		{
-			// CLEAR OLD SLOT
-			if (currentSlot != null)
-			{
-				currentSlot.currentChair = null;
-				currentSlot = null;
-			}
+            Debug.Log(chairName + " placed in " + closestSlot.name);
 
-			// RETURN
-			rectTransform.anchoredPosition = originalPosition;
-			isInSlot = false;
+            // 🔊 PLAY DROP SOUND HERE
+            if (audioSource != null && dropSound != null)
+                audioSource.PlayOneShot(dropSound, 0.6f);
+        }
+        else
+        {
+            // return
+            if (currentSlot != null)
+            {
+                currentSlot.currentChair = null;
+                currentSlot = null;
+            }
 
-			Debug.Log(chairName + " returned");
-		}
-	}
+            rectTransform.anchoredPosition = originalPosition;
+            isInSlot = false;
+
+            Debug.Log(chairName + " returned");
+
+            // 🔊 RETURN SOUND
+            if (audioSource != null && returnSound != null)
+                audioSource.PlayOneShot(returnSound, 0.4f);
+        }
+    }
 }

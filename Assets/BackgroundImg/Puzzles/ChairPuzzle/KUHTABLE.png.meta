@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: 81b3b17a54c5dd847883903bf587fdce
+guid: 457c473a71444754bbded0294442a4ae
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -9043600174081709703
-    second: ravenchair_0
-  - first:
-      213: -3533184239458062005
-    second: ravenchair_1
+      213: -1841059961521449053
+    second: KUHTABLE_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -116,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ravenchair_0
+      name: KUHTABLE_0
       rect:
         serializedVersion: 2
-        x: 276
-        y: 613
-        width: 458
-        height: 668
+        x: 111
+        y: 92
+        width: 245
+        height: 295
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 979e2358e8dae7280800000000000000
-      internalID: -9043600174081709703
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ravenchair_1
-      rect:
-        serializedVersion: 2
-        x: 768
-        y: 330
-        width: 584
-        height: 1107
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b41f71167ab97fec0800000000000000
-      internalID: -3533184239458062005
+      spriteID: 3a7d15728bd3376e0800000000000000
+      internalID: -1841059961521449053
       vertices: []
       indices: 
       edges: []
@@ -163,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -173,8 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ravenchair_0: -9043600174081709703
-      ravenchair_1: -3533184239458062005
+      KUHTABLE_0: -1841059961521449053
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

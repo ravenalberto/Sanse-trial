@@ -1,10 +1,10 @@
 fileFormatVersion: 2
-guid: 06f601291ea3b7c47a21b265fee6775a
+guid: 395f510563b989d45b33fa694cd8f4ec
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 7769827159954860956
-    second: marcstable_0
+      213: -1768986157900146179
+    second: MARCTABLE_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -113,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: marcstable_0
+      name: MARCTABLE_0
       rect:
         serializedVersion: 2
-        x: 120
-        y: 96
-        width: 273
-        height: 330
+        x: 111
+        y: 92
+        width: 245
+        height: 296
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -128,8 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c9baa4bb2a8f3db60800000000000000
-      internalID: 7769827159954860956
+      spriteID: df957cd367c4377e0800000000000000
+      internalID: -1768986157900146179
       vertices: []
       indices: 
       edges: []
@@ -148,7 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      marcstable_0: 7769827159954860956
+      MARCTABLE_0: -1768986157900146179
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

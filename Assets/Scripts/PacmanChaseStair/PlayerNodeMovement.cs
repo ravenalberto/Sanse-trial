@@ -2,143 +2,165 @@ using UnityEngine;
 
 public class PlayerNodeMovement : MonoBehaviour
 {
-	public NodeController currentNode;
-	public float moveSpeed = 3f;
+    public NodeController currentNode;
+    public float moveSpeed = 3f;
 
-	private NodeController targetNode;
+    private NodeController targetNode;
 
-	private Vector2 currentDirection;
-	private Vector2 desiredDirection;
+    private Vector2 currentDirection;
+    private Vector2 desiredDirection;
 
-	int pelletsEaten = 0;
+    int pelletsEaten = 0;
 
-	Animator anim;
+    Animator anim;
 
-	void Start()
-	{
-		anim = GetComponent<Animator>();
+    public AudioSource walkAudio;
 
-		targetNode = currentNode;
-		transform.position = currentNode.transform.position;
+    void Start()
+    {
+        anim = GetComponent<Animator>();
 
-		currentDirection = Vector2.left;
-		desiredDirection = Vector2.left;
+        walkAudio = GetComponent<AudioSource>();
 
-		MoveForward();
-		UpdateAnimation(); // 👈 start anim immediately
-	}
+        targetNode = currentNode;
+        transform.position = currentNode.transform.position;
 
-	void Update()
-	{
-		GetInput();
-		MoveToNode();
-		EatPellet();
-		CheckMemoryOrb(); // 👈 ADD THIS
-	}
+        currentDirection = Vector2.left;
+        desiredDirection = Vector2.left;
 
-	void GetInput()
-	{
-		if (Input.GetKey(KeyCode.W)) desiredDirection = Vector2.up;
-		if (Input.GetKey(KeyCode.S)) desiredDirection = Vector2.down;
-		if (Input.GetKey(KeyCode.A)) desiredDirection = Vector2.left;
-		if (Input.GetKey(KeyCode.D)) desiredDirection = Vector2.right;
-	}
+        MoveForward();
+        UpdateAnimation(); // start anim immediately
+    }
 
-	void MoveToNode()
-	{
-		if (targetNode != null)
-		{
-			transform.position = Vector3.MoveTowards(
-				transform.position,
-				targetNode.transform.position,
-				moveSpeed * Time.deltaTime
-			);
+    void Update()
+    {
+        GetInput();
+        MoveToNode();
+        EatPellet();
+        CheckMemoryOrb();
 
-			if (Vector3.Distance(transform.position, targetNode.transform.position) < 0.08f)
-			{
-				currentNode = targetNode;
+        HandleWalkingSound(); // 🔊 sound handler
+    }
 
-				TryChangeDirection();
-				MoveForward();
-				UpdateAnimation(); // 👈 update when direction changes
-			}
+    // ✅ FIXED FUNCTION
+    void HandleWalkingSound()
+    {
+        if (targetNode != null && Vector3.Distance(transform.position, targetNode.transform.position) > 0.05f)
+        {
+            if (!walkAudio.isPlaying)
+            {
+                walkAudio.Play();
+            }
+        }
+        else
+        {
+            if (walkAudio.isPlaying)
+            {
+                walkAudio.Stop();
+            }
+        }
+    }
 
+    void GetInput()
+    {
+        if (Input.GetKey(KeyCode.W)) desiredDirection = Vector2.up;
+        if (Input.GetKey(KeyCode.S)) desiredDirection = Vector2.down;
+        if (Input.GetKey(KeyCode.A)) desiredDirection = Vector2.left;
+        if (Input.GetKey(KeyCode.D)) desiredDirection = Vector2.right;
+    }
 
-			
-		}
-	}
+    void MoveToNode()
+    {
+        if (targetNode != null)
+        {
+            transform.position = Vector3.MoveTowards(
+                transform.position,
+                targetNode.transform.position,
+                moveSpeed * Time.deltaTime
+            );
 
-	void EatPellet()
-	{
-		Pellet pellet = currentNode.GetComponentInChildren<Pellet>();
+            if (Vector3.Distance(transform.position, targetNode.transform.position) < 0.08f)
+            {
+                currentNode = targetNode;
 
-		if (pellet != null && pellet.gameObject.activeSelf)
-		{
-			pellet.Eat();
-			pelletsEaten++;
-			Debug.Log("Pellets: " + pelletsEaten);
-		}
-	}
+                TryChangeDirection();
+                MoveForward();
+                UpdateAnimation();
+            }
+        }
+    }
 
-	void TryChangeDirection()
-	{
-		NodeController nextNode = GetNodeFromDirection(desiredDirection);
+    void EatPellet()
+    {
+        Pellet pellet = currentNode.GetComponentInChildren<Pellet>();
 
-		if (nextNode != null)
-		{
-			currentDirection = desiredDirection;
-			targetNode = nextNode;
-		}
-	}
+        if (pellet != null && pellet.gameObject.activeSelf)
+        {
+            pellet.Eat();
+            pelletsEaten++;
+            Debug.Log("Pellets: " + pelletsEaten);
+        }
+    }
 
-	void MoveForward()
-	{
-		NodeController nextNode = GetNodeFromDirection(currentDirection);
+    void TryChangeDirection()
+    {
+        NodeController nextNode = GetNodeFromDirection(desiredDirection);
 
-		if (nextNode != null)
-		{
-			targetNode = nextNode;
-		}
-	}
+        if (nextNode != null)
+        {
+            currentDirection = desiredDirection;
+            targetNode = nextNode;
+        }
+    }
 
-	void CheckMemoryOrb()
-	{
-		MemoryOrb orb = currentNode.GetComponentInChildren<MemoryOrb>();
+    void MoveForward()
+    {
+        NodeController nextNode = GetNodeFromDirection(currentDirection);
 
-		if (orb != null && orb.gameObject.activeSelf)
-		{
-			orb.Activate();
-		}
-	}
+        if (nextNode != null)
+        {
+            targetNode = nextNode;
+        }
+    }
 
-	void UpdateAnimation()
-	{
-		if (currentDirection == Vector2.up)
-			anim.Play("kuh_up");
-		else if (currentDirection == Vector2.down)
-			anim.Play("kuh_down");
-		else if (currentDirection == Vector2.left)
-			anim.Play("kuh_left");
-		else if (currentDirection == Vector2.right)
-			anim.Play("kuh_right");
-		else
-			anim.Play("kuh_idle");
-	}
+    void CheckMemoryOrb()
+    {
+        MemoryOrb orb = currentNode.GetComponentInChildren<MemoryOrb>();
 
-	NodeController GetNodeFromDirection(Vector2 dir)
-	{
-		if (dir == Vector2.up && currentNode.nodeUp != null)
-			return currentNode.nodeUp.GetComponent<NodeController>();
+        if (orb != null && orb.gameObject.activeSelf)
+        {
+            orb.Activate();
+        }
+    }
 
-		if (dir == Vector2.down && currentNode.nodeDown != null)
-			return currentNode.nodeDown.GetComponent<NodeController>();
+    void UpdateAnimation()
+    {
+        if (currentDirection == Vector2.up)
+            anim.Play("kuh_up");
+        else if (currentDirection == Vector2.down)
+            anim.Play("kuh_down");
+        else if (currentDirection == Vector2.left)
+            anim.Play("kuh_left");
+        else if (currentDirection == Vector2.right)
+            anim.Play("kuh_right");
+        else
+            anim.Play("kuh_idle");
+    }
 
-		if (dir == Vector2.left && currentNode.nodeLeft != null)
-			return currentNode.nodeLeft.GetComponent<NodeController>();
+    NodeController GetNodeFromDirection(Vector2 dir)
+    {
+        if (dir == Vector2.up && currentNode.nodeUp != null)
+            return currentNode.nodeUp.GetComponent<NodeController>();
 
-		if (dir == Vector2.right && currentNode.nodeRight != null)
-			return currentNode.nodeRight.GetComponent<NodeController>();
+        if (dir == Vector2.down && currentNode.nodeDown != null)
+            return currentNode.nodeDown.GetComponent<NodeController>();
 
-		return null;
-	}
+        if (dir == Vector2.left && currentNode.nodeLeft != null)
+            return currentNode.nodeLeft.GetComponent<NodeController>();
+
+        if (dir == Vector2.right && currentNode.nodeRight != null)
+            return currentNode.nodeRight.GetComponent<NodeController>();
+
+        return null;
+    }
 }

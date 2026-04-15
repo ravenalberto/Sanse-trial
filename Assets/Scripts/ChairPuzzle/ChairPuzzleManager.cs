@@ -1,5 +1,6 @@
 using System.Collections;
 using UnityEngine;
+using UnityEngine.Audio;
 using UnityEngine.SceneManagement;
 
 public class ChairPuzzleManager : MonoBehaviour
@@ -10,6 +11,12 @@ public class ChairPuzzleManager : MonoBehaviour
 
 	public GameObject resultPanel;
 	public TMPro.TMP_Text resultText;
+	
+	public AudioSource audioSource;
+	public AudioClip approveSound;
+	public AudioClip disapproveSound;
+	public AudioClip gameOverSound;
+
 
 	public void CheckSolution()
 	{
@@ -59,33 +66,40 @@ public class ChairPuzzleManager : MonoBehaviour
 				resultText.color = Color.red;
 				PuzzleState.scene2Result = "Disapprove";
 
-			}
+                audioSource.PlayOneShot(disapproveSound);
+
+            }
 			else if (slot3Valid && slot4Valid)
 			{
 				resultText.text = "Kuh approves (+Trust)";
 				resultText.color = Color.green;
 				PuzzleState.scene2Result = "Approve";
-			}
+
+                audioSource.PlayOneShot(approveSound);
+            }
 			else
 			{
 				resultText.text = "Game Over";
 				resultText.color = Color.red;
 				PuzzleState.scene2Result = "GameOver";
-			}
+
+                audioSource.PlayOneShot(gameOverSound);
+            }
 		}
 		else
 		{
 			resultText.text = "Game Over";
 			resultText.color = Color.red;
 			PuzzleState.scene2Result = "GameOver";
-		}
+
+            audioSource.PlayOneShot(gameOverSound);
+        }
 
 		StartCoroutine(HidePopup());
 		
 	}
 
 	
-
 	IEnumerator HidePopup()
 	{
 		yield return new WaitForSeconds(2f);

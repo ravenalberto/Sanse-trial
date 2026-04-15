@@ -1,13 +1,10 @@
 fileFormatVersion: 2
-guid: 8ea42043bfada9a419a79f40bd576f40
+guid: 57405105c17d8e743a3ceb5da13b8f29
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -8022158216517103593
-    second: marcchair_0
-  - first:
-      213: -3488773625442413363
-    second: marcchair_1
+      213: 4078062368744351312
+    second: CLASSROOMPUZZLE_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -49,7 +46,7 @@ TextureImporter:
   nPOTScale: 0
   lightmap: 0
   compressionQuality: 50
-  spriteMode: 1
+  spriteMode: 2
   spriteExtrude: 1
   spriteMeshType: 1
   alignment: 0
@@ -116,13 +113,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: marcchair_0
+      name: CLASSROOMPUZZLE_0
       rect:
         serializedVersion: 2
-        x: 276
-        y: 613
-        width: 458
-        height: 668
+        x: 0
+        y: 0
+        width: 1377
+        height: 768
       alignment: 0
       pivot: {x: 0, y: 0}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -131,30 +128,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7105484fa919ba090800000000000000
-      internalID: -8022158216517103593
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: marcchair_1
-      rect:
-        serializedVersion: 2
-        x: 768
-        y: 330
-        width: 584
-        height: 1107
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: dc4d0c93fd2659fc0800000000000000
-      internalID: -3488773625442413363
+      spriteID: 05625ec2e10389830800000000000000
+      internalID: 4078062368744351312
       vertices: []
       indices: 
       edges: []
@@ -163,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5e97eb03825dee720800000000000000
+    spriteID: 
     internalID: 0
     vertices: []
     indices: 
@@ -173,8 +148,7 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      marcchair_0: -8022158216517103593
-      marcchair_1: -3488773625442413363
+      CLASSROOMPUZZLE_0: 4078062368744351312
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
