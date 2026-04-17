@@ -71,6 +71,8 @@ public class Scene00Events : MonoBehaviour
         textBox.SetActive(false);
         nextButton.SetActive(false);
         if (fadeOut != null) fadeOut.SetActive(false);
+        if (fadeScreenIn != null) fadeScreenIn.SetActive(false);
+
 
         HideAllPortraits();
         StartCoroutine(IntroSequence());
@@ -230,7 +232,7 @@ public class Scene00Events : MonoBehaviour
                 break;
             case 25:
                 if (sfxSource != null && intercomSound != null) sfxSource.PlayOneShot(intercomSound);
-                ShowDialogue("Intercom", "An-ge-lus... Do-mi-ni... nun-ti-a-vit... Ma-ri-ae...");
+                ShowDialogue("Intercom", "The Angel of the Lord...");
                 break;
             case 26:
                 HideAllPortraits();
@@ -380,13 +382,12 @@ public class Scene00Events : MonoBehaviour
                 break;
             case 55:
                 HideAllPortraits();
-                if (fadeOut != null) fadeOut.SetActive(true);
                 ShowDialogue("", "We became a family. A group of five against the world.");
                 break;
 
             // --- RETURNING TO REALITY ---
             case 56:
-                if (fadeOut != null) fadeOut.SetActive(true);
+                if (fadeOut != null) fadeOut.SetActive(false);
                 StartCoroutine(GlitchTransition()); // Return to reality glitch
                 break;
             case 57:
