@@ -102,7 +102,17 @@ public class PlayerNodeMovement : MonoBehaviour
         }
     }
 
-    void TryChangeDirection()
+	void OnTriggerEnter2D(Collider2D other)
+	{
+		if (other.CompareTag("Ghost"))
+		{
+			Debug.Log("Hit ghost!");
+
+			PacmanGameManager.Instance.PlayerHit();
+		}
+	}
+
+	void TryChangeDirection()
     {
         NodeController nextNode = GetNodeFromDirection(desiredDirection);
 
