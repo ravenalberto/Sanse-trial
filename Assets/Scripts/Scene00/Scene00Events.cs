@@ -1,540 +1,1423 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 using TMPro;
 
-public class Scene00Events : MonoBehaviour
+public class Scene00VN : MonoBehaviour
 {
-    [Header("UI References")]
-    public GameObject fadeScreenIn;
-    public GameObject glitchOverlay;
-    public GameObject flashOverlay; // For white flashes
-    public GameObject textBox;
-    public TMP_Text charNameText;
-    public TMP_Text dialogueText;
-    public GameObject nextButton;
-    public GameObject fadeOut;
+	private Coroutine typingCoroutine;
 
-    [Header("Backgrounds")]
-    public GameObject backgroundHallway;
-    public GameObject backgroundCanteen;
-    public GameObject backgroundUncleJohns;
-    public GameObject School;
-    public GameObject Classroom;
+	private float skipTimer = 0f;
+	public float skipDelay = 0.05f;
 
-    [Header("Character Portraits (Normal)")]
-    public GameObject portraitCristel;
-    public GameObject portraitKuh;
-    public GameObject portraitMarc;
-    public GameObject portraitRaven;
-    public GameObject portraitDarlene;
-
-    [Header("Character Portraits (Expressions)")]
-    public GameObject portraitMarc_Laugh;
-    public GameObject portraitCristel_Worried;
-    public GameObject portraitKuh_Scared;
-    public GameObject portraitDarlene_Smile;
-
-    [Header("Object Cut-ins")]
-    public GameObject clockObject;
-    public GameObject shadowsObject;
-
-    [Header("Audio")]
-    public AudioSource bgmSource;
-    public AudioSource sfxSource;
-    public AudioClip bellSound;
-    public AudioClip intercomSound;
-    public AudioClip glitchSound;
-    public AudioClip clockTickSound;
-    public AudioClip heartbeatSound;
-    public AudioClip flashSound;
-    public AudioClip flashbackBGM;
-
-    private int step = 0;
-    private bool isTyping = false;
-    private int currentTextLength;
-
-    void Start()
-    {
-        // Initial UI State
-        glitchOverlay.SetActive(false);
-        if (flashOverlay != null) flashOverlay.SetActive(false);
-        if (clockObject != null) clockObject.SetActive(false);
-        if (shadowsObject != null) shadowsObject.SetActive(false);
-        if (backgroundHallway != null) backgroundHallway.SetActive(false);
-        if (backgroundCanteen != null) backgroundCanteen.SetActive(false);
-        if (backgroundUncleJohns != null) backgroundUncleJohns.SetActive(false);
-        if (School != null) School.SetActive(false);
-        if (Classroom != null) Classroom.SetActive(false);
-
-        textBox.SetActive(false);
-        nextButton.SetActive(false);
-        if (fadeOut != null) fadeOut.SetActive(false);
-        if (fadeScreenIn != null) fadeScreenIn.SetActive(false);
+	private bool isLooping = false;
 
 
-        HideAllPortraits();
-        StartCoroutine(IntroSequence());
-    }
+	public float textSpeed = 0.02f;
+	public bool skipMode = false;
 
-    IEnumerator IntroSequence()
-    {
-        if (fadeScreenIn != null) fadeScreenIn.SetActive(true);
-        yield return new WaitForSeconds(2f);
 
-        HideAllPortraits();
-        ShowDialogue("", "The hallway is packed with students in their yellow uniforms. The air is thick with the scent of floor wax and the collective exhaustion of a long school day.");
+	private DialogueLine currentLine;
 
-        if (fadeScreenIn != null) fadeScreenIn.SetActive(false);
-    }
+	private Queue<DialogueLine> tempQueue = new Queue<DialogueLine>();
+	private bool usingTempQueue = false;
 
-    public void OnNextClick()
-    {
-        if (isTyping) return;
+	[Header("Choices")]
+	public GameObject foodChoicePanel;
+	public GameObject dialogueChoicePanel;
 
-        step++;
-        switch (step)
-        {
-            // --- PROLOGUE: THE DISTORTION ---
-            case 1:
-                if (School != null)
-                {
-                    StartCoroutine(FadeInObject(School, 2.5f));
-                    // Zoom in slowly: target scale 1.15x over 15 seconds for a subtle effect
-                    StartCoroutine(ZoomInObject(School, 1.15f, 15f));
-                }
-                ShowDialogue("", "5:10 PM. The perfect time. The sun hits the corridor at just the right angle, turning everything into a warm, golden haze.");
-                break;
-            case 2:
-                // Fixed: Background image is hallway and not the school
-                if (backgroundHallway != null) StartCoroutine(FadeInObject(backgroundHallway, 2f));
-                if (School != null) School.SetActive(false);
-                HideAllPortraits();
-                if (portraitMarc != null) portraitMarc.SetActive(true);
-                ShowDialogue("Marc", "Sinasabi ko sa inyo, kung hindi lang ako pinigilan ni Ma'am kanina, natapos ko yung exam in twenty minutes. Absolute speedrun record 'yun, promise.");
-                break;
-            case 3:
-                HideAllPortraits();
-                if (portraitRaven != null) portraitRaven.SetActive(true);
-                ShowDialogue("Raven", "Anong speedrun? Labinlimang minuto ka lang tumititig sa kisame, Marc. Speedrun record of giving up 'yun, hindi exam.");
-                break;
-            case 4:
-                HideAllPortraits();
-                if (portraitKuh != null) portraitKuh.SetActive(true);
-                ShowDialogue("Kuh", "Hala! Sunog! Raven really just hit you with the 'Logic 101' card. Grabe siya, 'di man lang nag-preno.");
-                break;
-            case 5:
-                HideAllPortraits();
-                if (portraitCristel != null) portraitCristel.SetActive(true);
-                ShowDialogue("Cristel", "To be fair, Marc did look like he was trying to communicate with ghosts para makuha yung answers. Kulang na lang mag-summon siya ng spirit ni San Sebastian.");
-                break;
-            case 6:
-                HideAllPortraits();
-                if (portraitMarc_Laugh != null) portraitMarc_Laugh.SetActive(true);
-                ShowDialogue("Marc", "Grabe kayo sa akin. Nagre-reflect lang yung tao, 'di ba? Visualizing the success!");
-                break;
-            case 7:
-                HideAllPortraits();
-                if (portraitDarlene_Smile != null) portraitDarlene_Smile.SetActive(true);
-                ShowDialogue("Darlene", "Guys, tama na 'yan. At least he tried, 'di ba? Anyway, check niyo muna gamit niyo. Ayokong bumalik at umakyat ng tatlong palapag dahil lang may nakalimutan kayong charger o payong.");
-                break;
-            case 8:
-                HideAllPortraits();
-                if (portraitMarc_Laugh != null) portraitMarc_Laugh.SetActive(true);
-                ShowDialogue("Marc", "Check na lahat. My phone, my wallet, and my devastating good looks. Kumpleto na.");
-                break;
-            case 9:
-                HideAllPortraits();
-                if (portraitRaven != null) portraitRaven.SetActive(true);
-                ShowDialogue("Raven", "So, dalawang bagay lang pala dala mo? Yung looks, debatable pa.");
-                break;
-            case 10:
-                HideAllPortraits();
-                if (portraitKuh != null) portraitKuh.SetActive(true);
-                ShowDialogue("Kuh", "Ouch! Brutal talaga ni Raven today. Gutom lang 'yan, tara na kasi sa labas! Fishball muna tayo bago umuwi.");
-                break;
-            case 11:
-                HideAllPortraits();
-                if (portraitRaven != null) portraitRaven.SetActive(true);
-                ShowDialogue("Raven", "Mauuna na kami sa lobby ni Marc. Tignan lang namin kung siksikan na sa gate. Baka mahirapan tayo sumakay sa Recto kung magtatagal pa tayo rito.");
-                break;
-            case 12:
-                HideAllPortraits();
-                if (portraitDarlene != null) portraitDarlene.SetActive(true);
-                ShowDialogue("Darlene", "Sandali! Wait for me! Kailangan ko lang ibalik 'tong book sa library�nakalimutan ko na nasa bag ko pala 'to. Sobrang overdue na nito.");
-                break;
-            case 13:
-                HideAllPortraits();
-                if (portraitCristel != null) portraitCristel.SetActive(true);
-                ShowDialogue("Cristel", "Sige, antayin na lang namin kayo rito sa tapat ng lockers. Bilisan mo, Darlene, baka mag-close na yung library.");
-                break;
-            case 14:
-                HideAllPortraits();
-                if (portraitDarlene != null) portraitDarlene.SetActive(true);
-                ShowDialogue("Darlene", "Five minutes lang, promise! Don't leave without me, ha!");
-                break;
-            case 15:
-                HideAllPortraits();
-                ShowDialogue("", "The hallway suddenly feels much longer as soon as the rest of the group disappears around the corner.");
-                break;
-            case 16:
-                HideAllPortraits();
-                if (portraitKuh != null) portraitKuh.SetActive(true);
-                ShowDialogue("Kuh", "Hays, finally... akala ko hindi na matatapos yung last period. Sobrang high energy ng lahat ngayon, 'no? Siguro dahil Friday.");
-                break;
-            case 17:
-                HideAllPortraits();
-                if (portraitCristel != null) portraitCristel.SetActive(true);
-                ShowDialogue("Cristel", "Friday energy, Kuh. Lahat excited nang lumabas ng gate at mag-abang ng jeep pauwi. Gusto na lang nating lahat humiga at mag-cellphone.");
-                break;
-            case 18:
-                HideAllPortraits();
-                if (portraitKuh_Scared != null) portraitKuh_Scared.SetActive(true);
-                ShowDialogue("Kuh", "True. Pero parang... ang bilis dumilim today? Kanina lang ang liwanag pa.");
-                break;
-            case 19:
-                StartCoroutine(GlitchTransition());
-                break;
-            case 20:
-                HideAllPortraits();
-                if (portraitKuh_Scared != null) portraitKuh_Scared.SetActive(true);
-                ShowDialogue("Kuh", "...Wait. Narinig mo 'yun?");
-                break;
-            case 21:
-                HideAllPortraits();
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "Ang alin?");
-                break;
-            case 22:
-                // Added hallway fade in as requested
-                if (backgroundHallway != null) StartCoroutine(FadeInObject(backgroundHallway, 2f));
-                HideAllPortraits();
-                if (portraitKuh_Scared != null) portraitKuh_Scared.SetActive(true);
-                ShowDialogue("Kuh", "Yung bell. Parang... iba yung tunog. Like a broken record. Or parang galing sa ilalim ng tubig na ewan.");
-                break;
-            case 23:
-                HideAllPortraits();
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "Baka sira lang yung speakers. Alam mo naman dito, minsan nagpaparamdam talaga yung sound system. Tara na, baka iwanan pa tayo nina Darlene.");
-                break;
-            case 24:
-                HideAllPortraits();
-                if (bgmSource != null) bgmSource.Stop();
-                if (sfxSource != null && clockTickSound != null)
-                {
-                    sfxSource.clip = clockTickSound;
-                    sfxSource.loop = true;
-                    sfxSource.Play();
-                }
-                if (clockObject != null) StartCoroutine(FadeInObject(clockObject, 2f));
-                ShowDialogue("", "A sudden chill runs down the corridor. The ticking of a clock becomes rhythmic and heavy.");
-                break;
-            case 25:
-                if (sfxSource != null && intercomSound != null) sfxSource.PlayOneShot(intercomSound);
-                ShowDialogue("Intercom", "The Angel of the Lord...");
-                break;
-            case 26:
-                HideAllPortraits();
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "Wait, ang aga naman yata para sa prayer. 5:15 pa lang, 'di ba? Diba 6 PM dapat 'yun?");
-                break;
-            case 27:
-                // Fixed: Clock must not be shown after this point
-                if (clockObject != null) clockObject.SetActive(false);
-                if (backgroundHallway != null) StartCoroutine(FadeInObject(backgroundHallway, 2f));
-                if (shadowsObject != null) shadowsObject.SetActive(true);
-                StartCoroutine(FlashEffect());
-                ShowDialogue("", "The screen turns a deep, unnatural crimson. The shadows of the lockers stretch across the floor like long, dark fingers.");
-                break;
-            case 28:
-                if (sfxSource != null) sfxSource.Stop();
-                if (sfxSource != null && heartbeatSound != null) sfxSource.PlayOneShot(heartbeatSound);
-                ShowDialogue("SYSTEM", "The clock shudders. Time stops. 5:17 PM.");
-                break;
-            case 29:
-                HideAllPortraits();
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "...5:17? Pero 5:13 lang kanina sa phone ko. Lowbat ba 'to?");
-                break;
-            case 30:
-                HideAllPortraits();
-                if (portraitKuh_Scared != null) portraitKuh_Scared.SetActive(true);
-                ShowDialogue("Kuh", "Cristel? Bakit biglang tumahimik? Nasaan na yung ibang mga estudyante? Kanina lang ang ingay dito...");
-                break;
-            case 31:
-                HideAllPortraits();
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "Kuh? Stay close. Hindi ko na... hindi ko na makita yung dulo ng hallway. Parang may fog na ewan.");
-                break;
-            case 32:
-                ShowDialogue("", "And then, the silence isn't just quiet. It is heavy, pressing against their ears. As if the school itself has stopped breathing.");
-                break;
-            case 33:
-                HideAllPortraits();
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "Kuh, tara sa baba... baka andun sila sa lobby. Bilisan natin.");
-                break;
-            case 34:
-                ShowDialogue("", "The darkness swallows the hallway as we move toward the stairs. Every step feels like we are sinking deeper into a cold, unfamiliar world.");
-               
-                break;
-            case 35:
-                HideAllPortraits();
-                ShowDialogue("", "As the darkness pulls us in, my mind drifts back... back to when things were simpler.");
-                break;
-            case 36:
-                StartCoroutine(FlashbackTransition());
-                break;
 
-            // --- FLASHBACK: HOW THEY MET ---
-            case 37:
-                HideAllPortraits();
-                if (backgroundHallway != null) backgroundHallway.SetActive(true);
-                if (backgroundCanteen != null) backgroundCanteen.SetActive(false);
-                if (portraitMarc_Laugh != null) portraitMarc_Laugh.SetActive(true);
-                ShowDialogue("Marc", "Tetel! Akalain mo 'yun, dito rin pala bagsak mo? Small world talaga!");
-                break;
-            case 38:
-                HideAllPortraits();
-                if (portraitCristel != null) portraitCristel.SetActive(true);
-                ShowDialogue("Cristel", "Hoy, Marc! Classmates na tayo since High School, pati ba naman sa college susundan mo ako? Akala ko ba sa Manila ka mag-aaral?");
-                break;
-            case 39:
-                HideAllPortraits();
-                if (portraitMarc != null) portraitMarc.SetActive(true);
-                ShowDialogue("Marc", "Transfer na ako, 'no. Masyadong magulo dun. Tsaka siyempre, namiss kita as a classmate. Wala akong ma-bully dun eh.");
-                break;
-            case 40:
-                HideAllPortraits();
-                ShowDialogue("", "Marc and I have been friends since our high school days. He's always been the 'presko' one, but college was a fresh start for both of us.");
-                break;
-            case 41:
-                HideAllPortraits();
-                if (portraitDarlene_Smile != null) portraitDarlene_Smile.SetActive(true);
-                ShowDialogue("Darlene", "Excuse me? Are you guys in the Psychology block too? Kanina ko pa kasi hinahanap yung Room 302.");
-                break;
-            case 42:
-                HideAllPortraits();
-                if (portraitCristel != null) portraitCristel.SetActive(true);
-                ShowDialogue("Cristel", "Ah, oo! Psychology rin kami. I'm Cristel, and this is Marc. Sabay ka na sa amin?");
-                break;
-            case 43:
-                HideAllPortraits();
-                if (portraitDarlene_Smile != null) portraitDarlene_Smile.SetActive(true);
-                ShowDialogue("Darlene", "I'm Darlene. Thank God! Akala ko maliligaw na ako forever dito. Ang laki pala ng San Sebastian.");
-                break;
-            case 44:
-                HideAllPortraits();
-                if (backgroundHallway != null) backgroundHallway.SetActive(false);
-                if (backgroundCanteen != null) backgroundCanteen.SetActive(true);
-                ShowDialogue("", "A few weeks later, our duo became a trio. Darlene and I became inseparable during long lecture hours.");
-                break;
-            case 45:
-                HideAllPortraits();
-                if (portraitDarlene != null) portraitDarlene.SetActive(true);
-                ShowDialogue("Darlene", "Guys, wait lang! May mga kakilala ako na dito rin nag-college. Introduce ko kayo, sa Canteen daw sila kakain.");
-                break;
-            case 46:
-                HideAllPortraits();
-                if (portraitRaven != null) portraitRaven.SetActive(true);
-                ShowDialogue("Raven", "Darlene. You're 3 minutes and 14 seconds late. Standard procedure dictates we should have started eating.");
-                break;
-            case 47:
-                HideAllPortraits();
-                if (portraitKuh != null) portraitKuh.SetActive(true);
-                ShowDialogue("Kuh", "Grabe ka naman, Raven! Hayaan mo na, andito na siya oh! Huy Darlene! Namiss kita!");
-                break;
-            case 48:
-                HideAllPortraits();
-                if (portraitDarlene_Smile != null) portraitDarlene_Smile.SetActive(true);
-                ShowDialogue("Darlene", "Cristel, Marc... this is Raven, classmate ko nung High School. And this is Kuh, schoolmate ko naman nung Senior High. Small world, 'di ba?");
-                break;
-            case 49:
-                HideAllPortraits();
-                if (portraitMarc_Laugh != null) portraitMarc_Laugh.SetActive(true);
-                ShowDialogue("Marc", "Nice! More people to ignore Raven's logic lectures. Welcome to the group!");
-                break;
-            case 50:
-                HideAllPortraits();
-                if (backgroundCanteen != null) backgroundCanteen.SetActive(false);
-                if (backgroundUncleJohns != null) backgroundUncleJohns.SetActive(true);
-                ShowDialogue("", "And just like that, the pieces fell into place. We started spending every lunch break together.");
-                break;
-            case 51:
-                HideAllPortraits();
-                if (portraitKuh != null) portraitKuh.SetActive(true);
-                ShowDialogue("Kuh", "Dali! Uncle John's tayo! Sabi nila masarap yung fried chicken dun, tsaka dun tayo mag-tambay habang mainit pa sa labas.");
-                break;
-            case 52:
-                HideAllPortraits();
-                if (portraitRaven != null) portraitRaven.SetActive(true);
-                ShowDialogue("Raven", "Statistically, the chicken there is consistent. I agree with this decision.");
-                break;
-            case 53:
-                HideAllPortraits();
-                if (portraitCristel != null) portraitCristel.SetActive(true);
-                ShowDialogue("Cristel", "Tignan mo 'tong mga 'to. Pagkain talaga nagpapasundo sa inyo. Tara na nga.");
-                break;
-            case 54:
-                HideAllPortraits();
-                ShowDialogue("", "At Uncle John's, amidst the smell of fried chicken and cheap air conditioning, we became more than just classmates.");
-                break;
-            case 55:
-                HideAllPortraits();
-                ShowDialogue("", "We became a family. A group of five against the world.");
-                break;
+	// FOOD (image buttons)
+	public GameObject foodButtonA;
+	public GameObject foodButtonB;
+	public GameObject foodButtonC;
 
-            // --- RETURNING TO REALITY ---
-            case 56:
-                if (fadeOut != null) fadeOut.SetActive(false);
-                StartCoroutine(GlitchTransition()); // Return to reality glitch
-                break;
-            case 57:
-                HideAllPortraits();
-                if (backgroundUncleJohns != null) backgroundUncleJohns.SetActive(false);
-                if (backgroundHallway != null) backgroundHallway.SetActive(true);
-                if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(true);
-                ShowDialogue("Cristel", "...But that was then. Now, I can't even find where 'here' is.");
-                break;
-            case 58:
-                StartCoroutine(TransitionToScene01());
-                break;
-        }
-    }
+	// DIALOGUE (text buttons)
 
-    void ShowDialogue(string name, string text)
-    {
-        if (textBox != null) textBox.SetActive(true);
-        if (charNameText != null) charNameText.text = name;
-        if (nextButton != null) nextButton.SetActive(false);
+	public GameObject choiceTurnA;
+	public GameObject choiceTurnB;
 
-        TextCreator.fullText = text;
-        TextCreator.charCount = 0;
-        TextCreator.runTextPrint = true;
+	public GameObject choiceTruthA;
+	public GameObject choiceTruthB;
 
-        currentTextLength = text.Length;
-        StartCoroutine(WaitForText(currentTextLength));
-    }
+	private int choiceResult = 0;
 
-    IEnumerator WaitForText(int length)
-    {
-        isTyping = true;
-        while (TextCreator.charCount < length)
-        {
-            yield return null;
-        }
-        isTyping = false;
-        if (nextButton != null) nextButton.SetActive(true);
-    }
+	[Header("UI")]
+	public GameObject textBox;
+	public TMP_Text charNameText;
+	public TMP_Text dialogueText;
+	public GameObject nextButton;
 
-    IEnumerator FlashbackTransition()
-    {
-        if (nextButton != null) nextButton.SetActive(false);
-        if (sfxSource != null && flashSound != null) sfxSource.PlayOneShot(flashSound);
-        if (flashOverlay != null) flashOverlay.SetActive(true);
+	[Header("Backgrounds")]
+	public GameObject hallwayBG;
+	public GameObject complabBG;
+	public GameObject uncleJohnsBG;
+	public GameObject insideuncleJohnsBG;
+	public GameObject schoolBG;
+	private GameObject currentBG;
+	
 
-        yield return new WaitForSeconds(0.5f);
+	[Header("Portraits")]
+	public GameObject cristelNeutral;
+	public GameObject cristelFrown;
+	public GameObject marcLaugh;
+	public GameObject kuhNeutral;
+	public GameObject kuhScared;
+	public GameObject ravenNeutral;
+	public GameObject darleneNeutral;
+	public GameObject strangerNeutral;
+	public GameObject strangerSmile;
 
-        if (bgmSource != null && flashbackBGM != null)
-        {
-            bgmSource.clip = flashbackBGM;
-            bgmSource.loop = true;
-            bgmSource.Play();
-        }
+	[Header("Audio")]
+	public AudioSource sfxSource;
+	public AudioClip bgFadeSFX;   // whoosh sound
+	public AudioClip glitchSFX;   // optional
 
-        if (fadeOut != null) fadeOut.SetActive(false);
-        if (flashOverlay != null) flashOverlay.SetActive(false);
-        OnNextClick();
-    }
+	private Queue<DialogueLine> dialogueQueue = new Queue<DialogueLine>();
+	private bool isTyping = false;
+	private Coroutine bgFadeCoroutine;
 
-    IEnumerator GlitchTransition()
-    {
-        if (nextButton != null) nextButton.SetActive(false);
-        if (sfxSource != null && glitchSound != null) sfxSource.PlayOneShot(glitchSound);
-        if (glitchOverlay != null) glitchOverlay.SetActive(true);
-        yield return new WaitForSeconds(0.1f);
-        if (glitchOverlay != null) glitchOverlay.SetActive(false);
-        yield return new WaitForSeconds(0.05f);
-        if (glitchOverlay != null) glitchOverlay.SetActive(true);
-        yield return new WaitForSeconds(0.2f);
-        if (glitchOverlay != null) glitchOverlay.SetActive(false);
-        if (fadeOut != null) fadeOut.SetActive(false);
-        OnNextClick();
-    }
+	void Start()
+	{
+		// Set initial BG
+		currentBG = schoolBG;
+		schoolBG.SetActive(true);
 
-    IEnumerator FlashEffect()
-    {
-        if (flashOverlay != null)
-        {
-            if (sfxSource != null && flashSound != null) sfxSource.PlayOneShot(flashSound);
-            flashOverlay.SetActive(true);
-            yield return new WaitForSeconds(0.1f);
-            flashOverlay.SetActive(false);
-        }
-    }
+		EnqueueDialogue();
+		ShowNextLine();
+	}
 
-    IEnumerator FadeInObject(GameObject obj, float duration = 1.5f)
-    {
-        if (obj == null) yield break;
+	// =========================
+	// 🔥 DIALOGUE
+	// =========================
+	void EnqueueDialogue()
+	{
+		// 🏫 SCHOOL
+		dialogueQueue.Enqueue(new DialogueLine("", "The bell rings."));
+		dialogueQueue.Enqueue(new DialogueLine("", "The Angelus follows—"));
+		dialogueQueue.Enqueue(new DialogueLine("", "a few seconds too late."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel doesn’t notice."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Or maybe…"));
+		dialogueQueue.Enqueue(new DialogueLine("", "she just chooses not to."));
 
-        // Using CanvasGroup for UI or SpriteRenderer alpha for sprites
-        CanvasGroup cg = obj.GetComponent<CanvasGroup>();
-        if (cg == null) cg = obj.AddComponent<CanvasGroup>();
+		dialogueQueue.Enqueue(new DialogueLine("", "She walks beside her friends."));
+		dialogueQueue.Enqueue(new DialogueLine("", "The usual circle."));
 
-        cg.alpha = 0;
-        obj.SetActive(true);
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "so guys, anong game want nyo?", darleneNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "siguro barilan, yung may zombies.", kuhNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "haha i like that. Parang resident evil.", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "oo maganda yun!", marcLaugh));
 
-        float elapsed = 0;
-        while (elapsed < duration)
-        {
-            cg.alpha = Mathf.Lerp(0, 1, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        cg.alpha = 1;
-    }
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "kaso parang mahirap sya i code.", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "what if yung may story? Ano tawag sa mga ganun?", cristelNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "visual novel?", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "ay alam mo yung summertime saga?", marcLaugh));
 
-    IEnumerator FadeOutObject(GameObject obj)
-    {
-        if (obj != null) obj.SetActive(false);
-        yield return null;
-    }
+		dialogueQueue.Enqueue(new DialogueLine("", "Raven and Kuh laugh awkwardly."));
 
-    IEnumerator ZoomInObject(GameObject obj, float targetScale, float duration)
-    {
-        if (obj == null) yield break;
-        Vector3 initialScale = obj.transform.localScale;
-        Vector3 finalScale = initialScale * targetScale;
-        float elapsed = 0;
-        while (elapsed < duration)
-        {
-            obj.transform.localScale = Vector3.Lerp(initialScale, finalScale, elapsed / duration);
-            elapsed += Time.deltaTime;
-            yield return null;
-        }
-        obj.transform.localScale = finalScale;
-    }
+		// 🏪 OUTSIDE STORE
+		dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_UNCLE]"));
 
-    IEnumerator TransitionToScene01()
-    {
-        isTyping = true;
-        if (nextButton != null) nextButton.SetActive(false);
-        if (fadeOut != null) fadeOut.SetActive(true);
-        yield return new WaitForSeconds(2f);
-        SceneManager.LoadScene("HallwayScene01");
-    }
+		dialogueQueue.Enqueue(new DialogueLine("", "They arrive at the nearby convenience store."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Their usual spot."));
+		dialogueQueue.Enqueue(new DialogueLine("", "The air conditioning feels nicer against the heat."));
 
-    void HideAllPortraits()
-    {
-        if (portraitCristel != null) portraitCristel.SetActive(false);
-        if (portraitKuh != null) portraitKuh.SetActive(false);
-        if (portraitMarc != null) portraitMarc.SetActive(false);
-        if (portraitRaven != null) portraitRaven.SetActive(false);
-        if (portraitDarlene != null) portraitDarlene.SetActive(false);
-        if (portraitMarc_Laugh != null) portraitMarc_Laugh.SetActive(false);
-        if (portraitCristel_Worried != null) portraitCristel_Worried.SetActive(false);
-        if (portraitKuh_Scared != null) portraitKuh_Scared.SetActive(false);
-        if (portraitDarlene_Smile != null) portraitDarlene_Smile.SetActive(false);
-    }
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "ano yun?", darleneNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "basta visual novel din yun.", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "ako yung main character", marcLaugh));
+
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "lagi ka nalang feeling main character nakakabwisit na", cristelFrown));
+
+		// 🏪 INSIDE STORE
+		dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_INSIDE]"));
+
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "kuya ano ba kasi yon—", darleneNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "guys baka gusto nyong bumili", kuhNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("Stranger", "ano ba naman to nakaharang sa daan."));
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "hala sorry po", darleneNeutral));
+
+		// 👁 HORROR BUILDUP
+		dialogueQueue.Enqueue(new DialogueLine("", "Something feels… off."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Not loud."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Not obvious."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Just—wrong."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Someone stands outside the store.", strangerNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("", "Talking.", strangerNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("", "But there’s no one in front of them.", strangerNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel turns to see…", cristelFrown));
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "Wait… I know them..", cristelFrown));
+
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "huh sino?", kuhNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Marc, Darlene, and Raven are still arguing."));
+
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "hehe ok sige basta visual novel nalang.", darleneNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "tapos lagyan ko nalang minigames.", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "gusto ko pogi ako jan", marcLaugh));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "They sit near the window."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel keeps looking outside."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Something still doesn’t sit right."));
+
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "cristel? ok ka lang? parang nakakita ka ng multo.", kuhNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel turns to Kuh, startled.", cristelFrown));
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "a-ah.. wala baka guni guni lang", cristelNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "ang alin?", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "wala ka binili?", darleneNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel looks at everyone already eating."));
+
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "oh right sorry i forgot!", cristelNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "She heads to the shelves."));
+		dialogueQueue.Enqueue(new DialogueLine("", "But her mind is somewhere else."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Still outside."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Still watching."));
+
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "ANG TAGAL NAMAN NG ISA JAN", marcLaugh));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel snaps out of it.", cristelFrown));
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "SORRY HA", cristelFrown));
+
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "omaygulay kalmahan nyo lang pinagtitinginan na kayo oh.", darleneNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "umay", kuhNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Kuh turns away."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Raven scrolls through her phone."));
+
+		// 🍱 CHOICE 1
+		dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_FOOD]"));
+
+		// AFTER CHOICE
+		dialogueQueue.Enqueue(new DialogueLine("", "Finally they had finished eating."));
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "tapos bukas mahaba vacant natin right?", darleneNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "comshop na", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "uuwi ako tas di na ako babalik", marcLaugh));
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "tel, what if volleyball tayo sa vacant", kuhNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "As they prepare to head out, Cristel looks outside."));
+		dialogueQueue.Enqueue(new DialogueLine("", "The figure is gone."));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel smiles."));
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "taraahhh", cristelNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_UNCLE]"));
+		dialogueQueue.Enqueue(new DialogueLine("", "They walk toward the campus."));
+
+		dialogueQueue.Enqueue(new DialogueLine("Raven", "anjan na ba daw si sir?", ravenNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "wait chat ko sila", kuhNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "dar pahipak", marcLaugh));
+		dialogueQueue.Enqueue(new DialogueLine("Darlene", "kuya namannnn", darleneNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "Cristel can’t focus."));
+		dialogueQueue.Enqueue(new DialogueLine("", "A familiar voice calls out."));
+		dialogueQueue.Enqueue(new DialogueLine("Voice", "Cristel!"));
+
+		dialogueQueue.Enqueue(new DialogueLine("", "She stops."));
+		dialogueQueue.Enqueue(new DialogueLine("", "Turns around."));
+		dialogueQueue.Enqueue(new DialogueLine("", "A familiar face waves."));
+		dialogueQueue.Enqueue(new DialogueLine("", "An old friend."));
+
+		dialogueQueue.Enqueue(new DialogueLine("Cristel", "Oh hey!", cristelNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("", "Something feels off."));
+		dialogueQueue.Enqueue(new DialogueLine("Kuh", "tetel?", kuhNeutral));
+		dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_TURN]"));
+	}
+
+	// =========================
+	// 🎮 NEXT BUTTON
+	// =========================
+	public void OnNextClick()
+	{
+		if (isTyping)
+		{
+			StopCoroutine(typingCoroutine);
+
+			dialogueText.text = currentLine.text;
+
+			isTyping = false;
+			nextButton.SetActive(true);
+
+			return;
+		}
+
+		ShowNextLine();
+	}
+
+	void Update()
+	{
+		skipMode = Input.GetKey(KeyCode.LeftControl);
+
+		if (skipMode && !isTyping)
+		{
+			// STOP at choices
+			if (!foodChoicePanel.activeSelf &&
+				!dialogueChoicePanel.activeSelf)
+			{
+				ShowNextLine();
+			}
+		}
+	}
+
+
+	void SkipToNextChoice()
+	{
+		while (dialogueQueue.Count > 0)
+		{
+			DialogueLine next = dialogueQueue.Peek();
+
+			if (next.speaker == "SYSTEM" &&
+				(next.text.Contains("CHOICE")))
+			{
+				ShowNextLine();
+				return;
+			}
+
+			dialogueQueue.Dequeue();
+		}
+	}
+
+	void ShowNextLine()
+	{
+		if (!usingTempQueue && dialogueQueue.Count == 0)
+		{
+			Debug.Log("Scene Done");
+			return;
+		}
+
+		DialogueLine line;
+
+		if (usingTempQueue && tempQueue.Count > 0)
+		{
+			line = tempQueue.Dequeue();
+
+			if (tempQueue.Count == 0 &&
+				!(line.speaker == "SYSTEM"))
+			{
+				usingTempQueue = false;
+			}// go back to main queue after
+		}
+		else
+		{
+			line = dialogueQueue.Dequeue();
+		}
+
+
+
+		// 🎬 SYSTEM COMMANDS
+		if (line.speaker == "SYSTEM")
+		{
+			bool shouldPause = HandleSystemCommand(line.text);
+
+			if (!shouldPause)
+				ShowNextLine();
+
+			return;
+		}
+
+		// 🎭 PORTRAITS
+		HideAllPortraits();
+		if (line.portrait != null)
+			line.portrait.SetActive(true);
+
+		currentLine = line;
+
+		if (typingCoroutine != null)
+		{
+			StopCoroutine(typingCoroutine);
+		}
+
+		typingCoroutine = StartCoroutine(TypeLine(line));
+	}
+
+	// =========================
+	// 🔊 SYSTEM COMMANDS
+	// =========================
+	bool HandleSystemCommand(string command)
+	{
+		if (command == "[BG_UNCLE]")
+		{
+			StartBGTransition(uncleJohnsBG);
+			return false;
+		}
+		else if (command == "[BG_INSIDE]")
+		{
+			StartBGTransition(insideuncleJohnsBG);
+			return false;
+		}
+		else if (command == "[GLITCH]")
+		{
+			if (glitchSFX != null)
+				sfxSource.PlayOneShot(glitchSFX);
+
+			return false;
+		}
+		else if (command == "[CHOICE_FOOD]")
+		{
+			nextButton.SetActive(false);
+			foodChoicePanel.SetActive(true);
+			return true;
+		}
+
+		else if (command == "[CHOICE_TURN]")
+		{
+			nextButton.SetActive(false);
+			dialogueChoicePanel.SetActive(true);
+
+			choiceTurnA.SetActive(true);
+			choiceTurnB.SetActive(true);
+
+			choiceTruthA.SetActive(false);
+			choiceTruthB.SetActive(false);
+
+
+			return true;
+		}
+
+		else if (command == "[CHOICE_TRUTH]")
+		{
+			nextButton.SetActive(false);
+			dialogueChoicePanel.SetActive(true);
+
+			// show only 2 dialogue buttons
+			choiceTurnA.SetActive(false);
+			choiceTurnB.SetActive(false);
+
+			choiceTruthA.SetActive(true);
+			choiceTruthB.SetActive(true);
+
+			return true;
+		}
+
+		else if (command == "[LOOP_CONTINUE]")
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Finally they had finished eating."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"tapos bukas mahaba vacant natin right?",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Raven",
+				"comshop na",
+				ravenNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"uuwi ako tas di na ako babalik",
+				marcLaugh
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Kuh",
+				"tel, what if volleyball tayo sa vacant",
+				kuhNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"ahh. sige…",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"As they were preparing to head out, Cristel looks outside."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The figure was gone."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Again."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"No… It's happening again…",
+				cristelFrown
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"They walk toward the campus."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Voice",
+				"cristel!"
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Closer."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Closer."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"Sorry. Let's go.",
+				cristelFrown
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Kuh",
+				"What's that about?",
+				kuhNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[SCENE_COMPLAB]"
+			));
+
+			return false;
+		}
+
+		else if (command == "[LOOP_START]")
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel could see Dar looking at her empty table."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"wala ka binili?",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel looks at everyone who already bought lunch to eat."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"This feels like a deja vu..."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"...No."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Not deja vu."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"This already happened."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Exactly like this."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"oh right sorry i forgot!",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"She heads to the shelf to pick what to buy."
+			));
+
+			isLooping = true;
+
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[CHOICE_FOOD]"
+			));
+
+			return false;
+		}
+
+		else if (command == "[SCENE_COMPLAB]")
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[BG_COMPLAB]"
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The classroom is busy as usual."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel sits next to Darlene's desk."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"But Darlene isn't sitting beside her."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"She's talking to a friend nearby."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Her notes are left on the table."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"Darlene! Can I borrow your notes?",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"Sure!",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"thanks",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel takes the notebook."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"As she opens it—"
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"There was red all over."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Flesh."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Blood dripping from the pages."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"AH!",
+				cristelFrown
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"She drops the notebook."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Raven",
+				"You good?",
+				ravenNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"oh my cristel are you ok?",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[CHOICE_NOTEBOOK]"
+			));
+
+			return false;
+		}
+
+		else if (command == "[BG_COMPLAB]")
+		{
+			StartBGTransition(complabBG);
+			return false;
+		}
+
+		return false;
+	}
+
+
+
+
+
+
+
+	void StartBGTransition(GameObject newBG)
+	{
+		if (newBG == currentBG) return;
+
+		if (bgFadeCoroutine != null)
+			StopCoroutine(bgFadeCoroutine);
+
+		bgFadeCoroutine = StartCoroutine(FadeBackground(newBG));
+	}
+
+	public void ChoiceA()
+	{
+		foodChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		// NORMAL TIMELINE
+		if (!isLooping)
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"I guess I'm a bit more thirsty than hungry..",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel walks over to the counter to pay."
+			));
+		}
+		else
+		{
+			// 👁 LOOP VERSION
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The bottle feels familiar."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Too familiar."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"...Didn't I already pick this before?",
+				cristelFrown
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The fluorescent lights suddenly feel too bright."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"ANG TAGAL NAMAN NG ISA JAN",
+				marcLaugh
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel breaks out of her trance."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"She chose not to reply."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"omaygulay kalmahan nyo lang pinagtitinginan na kayo oh.",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Kuh",
+				"umay",
+				kuhNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Kuh already had her face turned away from people."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Raven is just scrolling through her phone."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[LOOP_CONTINUE]"
+			));
+
+			// 🔥 EXIT LOOP
+			isLooping = false;
+		}
+
+		ShowNextLine();
+	}
+
+	public void ChoiceB()
+	{
+		foodChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		if (!isLooping)
+		{
+			// NORMAL VERSION
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"Not too hungry, but I’m craving these..",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel walks over to the counter to pay."
+			));
+		}
+		else
+		{
+			// LOOP VERSION
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The plastic crinkles in her hand."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The sound makes Cristel freeze."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"...I heard this already.",
+				cristelFrown
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"For a second, it feels like she already lived this exact moment."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Same shelf."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Same lighting."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Same people."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"ANG TAGAL NAMAN NG ISA JAN",
+				marcLaugh
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel breaks out of her trance."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"She chose not to reply."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"omaygulay kalmahan nyo lang pinagtitinginan na kayo oh.",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Kuh",
+				"umay",
+				kuhNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Kuh already had her face turned away from people."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Raven is just scrolling through her phone."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[LOOP_CONTINUE]"
+			));
+
+			isLooping = false;
+		}
+
+		ShowNextLine();
+	}
+
+	public void ChoiceC()
+	{
+		foodChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		if (!isLooping)
+		{
+			// NORMAL VERSION
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"Not too hungry, but I’m craving these..",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel walks over to the counter to pay."
+			));
+		}
+
+		else
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The smell hits her immediately."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Oil."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Spices."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"And something else."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"...Why do I remember this?",
+				cristelFrown
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Her stomach suddenly twists."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Like her body already knew what was about to happen."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"The cashier smiles."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"For a second, Cristel feels terrified."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"ANG TAGAL NAMAN NG ISA JAN",
+				marcLaugh
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"",
+				"Cristel snaps out of it."
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"omaygulay kalmahan nyo lang pinagtitinginan na kayo oh.",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Kuh",
+				"umay",
+				kuhNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"SYSTEM",
+				"[LOOP_CONTINUE]"
+			));
+
+			isLooping = false;
+		}
+
+		ShowNextLine();
+	}
+
+	public void ChoiceTurnA() // canon
+	{
+		skipMode = false;
+		dialogueChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel walks towards them."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Old Friend",
+			"hi, kamusta ka?", strangerSmile
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Their smile seems off. Has she really forgiven them? Or is there still resentment?"
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Cristel",
+			"eto, okay lang naman..",
+			cristelNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel wants to say something else but she couldn't get it out."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Old Friend",
+			"mabuti naman. Miss kana namin.", strangerSmile
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"But everything feels quiet."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Then she hears Kuh."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Kuh",
+			"cristel?",
+			kuhNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"She could hear Kuh coming closer."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"And the loud sound of an approaching vehicle."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Old Friend",
+			"Sino yun?", strangerNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Kuh",
+			"cristel sino—",
+			kuhScared
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Then there was a loud crash."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"And everyone was screaming."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel turns around but before she could see the sight, the sound disappears."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Then—"
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"red."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"SYSTEM",
+			"[GLITCH]"
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"SYSTEM",
+			"[BG_INSIDE]"
+		));
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"The world snaps back into place."
+		));
+
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Too fast."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Like nothing ever happened."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Like it was never allowed to happen."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Kuh",
+			"cristel? ok ka lang? parang naka kita ka ng multo.",
+			kuhNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel turns to Kuh, surprised, shaking."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"SYSTEM",
+			"[CHOICE_TRUTH]"
+		));
+
+		ShowNextLine();
+	}
+
+	public void ChoiceTurnB()
+	{
+		skipMode = false;
+		dialogueChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		tempQueue.Enqueue(new DialogueLine("", "Cristel freezes."));
+		tempQueue.Enqueue(new DialogueLine("", "She doesn't turn back."));
+		tempQueue.Enqueue(new DialogueLine("", "She already knows what happens if she does."));
+
+		tempQueue.Enqueue(new DialogueLine("", "Closer."));
+		tempQueue.Enqueue(new DialogueLine("", "Closer."));
+
+		tempQueue.Enqueue(new DialogueLine("Cristel", "Sorry.", cristelNeutral));
+		tempQueue.Enqueue(new DialogueLine("Kuh", "what's that about?", kuhNeutral));
+
+		// continue main flow directly
+		ShowNextLine();
+	}
+
+
+	public void ChoiceTruthA()
+	{
+		skipMode = false;
+		dialogueChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Kuh",
+			"ako??? Nabangga??",
+			kuhScared
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel nods."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Cristel",
+			"oo, sorry baka kulang lang ako sa tulog huhu. Kuh mag ingat ka lagi please",
+			cristelFrown
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Marc",
+			"baka ikaw kailangan mag ingat di ko alam san ka nauntog",
+			marcLaugh
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Darlene",
+			"kuya namannnn",
+			darleneNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Raven",
+			"ayos yan idea for visual novel",
+			ravenNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Darlene",
+			"baka need mo magpahinga tel, pero if may pinagdadaanan ka you always know we're here para sayo..",
+			darleneNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Cristel",
+			"thank you guys…",
+		cristelNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"SYSTEM",
+			"[LOOP_START]"
+		));
+
+		ShowNextLine();
+	}
+
+
+	public void ChoiceTruthB()
+	{
+		isLooping = true;
+		skipMode = false;
+		dialogueChoicePanel.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Darlene",
+			"kung ano man yan you know you can tell us okay?",
+			darleneNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Marc",
+			"ang weird mo today ah",
+			marcLaugh
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel could see Darlene looking at her empty table."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Darlene",
+			"wala ka binili?",
+			darleneNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Cristel looks at everyone who already bought lunch to eat."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"This feels like a deja vu..."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"...No."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Not deja vu."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"This already happened."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"Exactly like this."
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"Cristel",
+			"oh right sorry i forgot!",
+			cristelNeutral
+		));
+
+		tempQueue.Enqueue(new DialogueLine(
+			"",
+			"She heads to the shelf to pick what to buy."
+		));
+
+		// 🔁 LOOP
+		tempQueue.Enqueue(new DialogueLine(
+			"SYSTEM",
+			"[CHOICE_FOOD]"
+		));
+
+		ShowNextLine();
+	}
+
+
+	// =========================
+	// 🎬 FADE + SOUND
+	// =========================
+	IEnumerator FadeBackground(GameObject newBG)
+	{
+		float duration = 0.5f;
+
+		// 🔊 PLAY SOUND HERE
+		if (bgFadeSFX != null)
+			sfxSource.PlayOneShot(bgFadeSFX);
+
+		// Fade OUT
+		if (currentBG != null)
+		{
+			CanvasGroup oldCG = currentBG.GetComponent<CanvasGroup>();
+			float t = 0;
+
+			while (t < duration)
+			{
+				t += Time.deltaTime;
+				oldCG.alpha = 1 - (t / duration);
+				yield return null;
+			}
+
+			oldCG.alpha = 0;
+			currentBG.SetActive(false);
+		}
+
+		// Switch
+		newBG.SetActive(true);
+		CanvasGroup newCG = newBG.GetComponent<CanvasGroup>();
+		newCG.alpha = 0;
+
+		// Fade IN
+		float t2 = 0;
+		while (t2 < duration)
+		{
+			t2 += Time.deltaTime;
+			newCG.alpha = t2 / duration;
+			yield return null;
+		}
+
+		newCG.alpha = 1;
+		currentBG = newBG;
+	}
+
+	// =========================
+	// 📝 TEXT
+	// =========================
+	IEnumerator TypeLine(DialogueLine line)
+	{
+		isTyping = true;
+		nextButton.SetActive(false);
+
+		textBox.SetActive(true);
+		charNameText.text = line.speaker;
+		dialogueText.text = "";
+
+		foreach (char c in line.text)
+		{
+			dialogueText.text += c;
+
+			yield return new WaitForSeconds(
+				skipMode ? 0.0001f : textSpeed
+			);
+		}
+
+		isTyping = false;
+		nextButton.SetActive(true);
+	}
+
+	// =========================
+	// 🎭 PORTRAITS
+	// =========================
+	void HideAllPortraits()
+	{
+		cristelNeutral.SetActive(false);
+		cristelFrown.SetActive(false);
+		marcLaugh.SetActive(false);
+		kuhNeutral.SetActive(false);
+		kuhScared.SetActive(false);
+		ravenNeutral.SetActive(false);
+		darleneNeutral.SetActive(false);
+
+		strangerNeutral.SetActive(false);
+		strangerSmile.SetActive(false);
+	}
+}
+
+// =========================
+// DATA CLASS
+// =========================
+[System.Serializable]
+public class DialogueLine
+{
+	public string speaker;
+	public string text;
+	public GameObject portrait;
+
+	public DialogueLine(string speaker, string text, GameObject portrait = null)
+	{
+		this.speaker = speaker;
+		this.text = text;
+		this.portrait = portrait;
+	}
 }
