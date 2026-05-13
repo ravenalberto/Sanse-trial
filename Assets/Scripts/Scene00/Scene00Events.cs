@@ -74,13 +74,23 @@ public class Scene00VN : MonoBehaviour
     public TMP_Text dialogueText;
     public GameObject nextButton;
 
+
     [Header("Backgrounds")]
+    public GameObject BathroomBG;
+    public GameObject ZoomComputerBG;
+    public GameObject KeyboardBG;
+    public GameObject SideviewcomputerBG;
     public GameObject hallwayBG;
     public GameObject complabBG;
     public GameObject uncleJohnsBG;
     public GameObject insideuncleJohnsBG;
     public GameObject schoolBG;
-    private GameObject currentBG;
+    public GameObject currentBG;
+    public GameObject BGTransitionPanel; // For fade effect
+    public GameObject FadeOutBG;
+
+
+
 
 
     [Header("Portraits")]
@@ -450,6 +460,22 @@ public class Scene00VN : MonoBehaviour
             StartBGTransition(insideuncleJohnsBG);
             return false;
         }
+        else if (command == "[BG_COMPUTER]")
+        {
+            StartBGTransition(ZoomComputerBG);
+            return false;
+        }
+        else if (command == "[BG_SIDECOMPUTER]")
+        {
+            StartBGTransition(SideviewcomputerBG);
+            return false;
+        }
+        else if (command == "[BG_KEYBOARD]")
+        {
+            StartBGTransition(KeyboardBG);
+            return false;
+        }
+
         else if (command == "[GLITCH]")
         {
             if (glitchSFX != null)
@@ -676,6 +702,12 @@ public class Scene00VN : MonoBehaviour
             return false;
         }
 
+        else if (command == "[BG_SCREEN_GOES_BLACK]")
+        {
+            StartBGTransition(hallwayBG);
+            return false;
+        }
+
         else if (command == "[CHOICE_NOTEBOOK]")
         {
             closedNotebook.SetActive(true);
@@ -720,14 +752,22 @@ public class Scene00VN : MonoBehaviour
             tempQueue.Enqueue(new DialogueLine("Cristel", "I should probably just do something else.."));
             tempQueue.Enqueue(new DialogueLine("", "She turns to look at Raven who is typing some code on our project."));
             tempQueue.Enqueue(new DialogueLine("Cristel", "Hey Raven can I help with anything?", cristelNeutral));
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_COMPUTER]"));
             tempQueue.Enqueue(new DialogueLine("Raven", "Huh? Yeah sure I guess you can work on this script..", ravenNeutral));
             tempQueue.Enqueue(new DialogueLine("", "Raven explains some tasks..."));
+
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_SIDECOMPUTER]"));
+
             tempQueue.Enqueue(new DialogueLine("Raven", "Alright, if you have questions I'll be with Dar.", ravenNeutral));
             tempQueue.Enqueue(new DialogueLine("Cristel", "Okay.. thank you raven."));
 
+
             tempQueue.Enqueue(new DialogueLine("Cristel", "Hmm what should go here."));
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_KEYBOARD]"));
             tempQueue.Enqueue(new DialogueLine("", "But suddenly the keyboard won't type."));
             tempQueue.Enqueue(new DialogueLine("Cristel", "huh..?", cristelFrown));
+
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_COMPLAB]"));
             tempQueue.Enqueue(new DialogueLine("SYSTEM", "[SCREEN_GOES_BLACK]"));
             tempQueue.Enqueue(new DialogueLine("Cristel", "Crap, did it even save? Did I kick the plug?"));
             tempQueue.Enqueue(new DialogueLine("", "Something feels weird. Like someone is watching her through the screen."));
@@ -746,7 +786,7 @@ public class Scene00VN : MonoBehaviour
             return false;
         }
 
-       
+
 
         else if (command == "[SCENE_BATHROOM]")
         {
