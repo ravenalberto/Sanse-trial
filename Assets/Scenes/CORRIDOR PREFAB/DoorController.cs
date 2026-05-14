@@ -4,28 +4,25 @@ using System.Collections;
 
 public class DoorController : MonoBehaviour
 {
+    [Header("Transition Settings")]
+    public CanvasGroup fadeCanvasGroup;
+    public float fadeDuration = 1.0f;
+
     [Header("Door Settings")]
     public bool isExitDoor = false;
-    public string nextSceneName = "Marc_TestScene";
-
-    [Tooltip("This script will automatically find '01_low'. Only this part will rotate.")]
-    public Transform rotatingDoorPanel;
+    public Transform rotatingDoorPanel; // Should be the '01_low' child
 
     [Header("Movement Settings")]
     public float openAngle = 90f;
-    public float smoothTime = 5f;
-    public float interactDistance = 4f;
-
-    [Tooltip("Standard Swivel is Y (0,1,0). If it falls downward, try X (1,0,0). If it falls backward, try Z (0,0,1).")]
+    public float smoothTime = 3f;
+    public float interactDistance = 5f;
     public Vector3 rotationAxis = new Vector3(0, 1, 0);
-
-    [Tooltip("Adjust this if the door is facing the wrong way when closed.")]
-    public float rotationOffset = 0f;
 
     [Header("UI Instruction")]
     public GameObject interactionPrompt;
 
     private bool isOpen = false;
+    private bool isTransitioning = false;
     private bool playerInRange = false;
     private Quaternion closedRotation;
     private Quaternion targetRotation;
@@ -34,12 +31,11 @@ public class DoorController : MonoBehaviour
 
     void Start()
     {
-        // Search children to find the '01' object (the panel)
+        // Automatically find the rotating panel if not assigned
         if (rotatingDoorPanel == null)
         {
             foreach (Transform child in transform.GetComponentsInChildren<Transform>())
             {
-                // We strictly look for the panel so the frame (03) doesn't move
                 if (child.name.Contains("01") && child != this.transform)
                 {
                     rotatingDoorPanel = child;
@@ -48,24 +44,37 @@ public class DoorController : MonoBehaviour
             }
         }
 
-        // Fallback if naming convention fails
         if (rotatingDoorPanel == null) rotatingDoorPanel = this.transform;
 
-        // Save the original rotation of the panel
         closedRotation = rotatingDoorPanel.localRotation;
         targetRotation = closedRotation;
 
-        // Find the player
+        // Find the player object
         GameObject player = GameObject.Find("Marc");
         if (player == null) player = GameObject.FindWithTag("Player");
         if (player != null) playerTransform = player.transform;
 
         if (interactionPrompt != null) interactionPrompt.SetActive(false);
+
+        // Setup Collider for Exit Door functionality
+        if (isExitDoor && rotatingDoorPanel != null)
+        {
+            BoxCollider col = rotatingDoorPanel.GetComponent<BoxCollider>();
+            if (col == null) col = rotatingDoorPanel.gameObject.AddComponent<BoxCollider>();
+            col.isTrigger = true;
+
+            // Adding the TriggerForwarder to the child panel
+            if (rotatingDoorPanel.gameObject.GetComponent<TriggerForwarder>() == null)
+            {
+                var forwarder = rotatingDoorPanel.gameObject.AddComponent<TriggerForwarder>();
+                forwarder.parentController = this;
+            }
+        }
     }
 
     void Update()
     {
-        if (playerTransform == null) return;
+        if (playerTransform == null || isTransitioning) return;
 
         float distance = Vector3.Distance(playerTransform.position, transform.position);
 
@@ -77,27 +86,41 @@ public class DoorController : MonoBehaviour
                 if (interactionPrompt != null) interactionPrompt.SetActive(true);
             }
 
-            if (Input.GetKeyDown(KeyCode.E)) ToggleDoor();
-        }
-        else
-        {
-            if (playerInRange)
+            if (Input.GetKeyDown(KeyCode.E))
             {
-                playerInRange = false;
-                if (interactionPrompt != null) interactionPrompt.SetActive(false);
+                Debug.Log("<color=green>Interaction:</color> E Pressed!");
+                ToggleDoor();
             }
+        }
+        else if (playerInRange)
+        {
+            playerInRange = false;
+            if (interactionPrompt != null) interactionPrompt.SetActive(false);
         }
     }
 
     public void ToggleDoor()
     {
+        if (isExitDoor && !isOpen)
+        {
+            isOpen = true;
+            // Notify the Dialogue System
+            MazeDialogueManager manager = Object.FindAnyObjectByType<MazeDialogueManager>();
+            if (manager != null) manager.OnDoorOpened();
+
+            // Start the fade and scene load
+            StartCoroutine(FadeAndLoadScene("Scene04"));
+            return;
+        }
+
+        // Standard rotation toggle
         isOpen = !isOpen;
-
         float angle = isOpen ? openAngle : 0f;
+        targetRotation = closedRotation * Quaternion.Euler(rotationAxis * angle);
 
-        // We multiply our chosen axis by the angle to ensure it only swivels on one plane
-        Vector3 rotationEuler = rotationAxis * (angle + rotationOffset);
-        targetRotation = closedRotation * Quaternion.Euler(rotationEuler);
+        // Notify the Dialogue System
+        MazeDialogueManager diagManager = Object.FindAnyObjectByType<MazeDialogueManager>();
+        if (diagManager != null) diagManager.OnDoorOpened();
 
         if (animationCoroutine != null) StopCoroutine(animationCoroutine);
         animationCoroutine = StartCoroutine(AnimateDoor());
@@ -105,22 +128,66 @@ public class DoorController : MonoBehaviour
 
     IEnumerator AnimateDoor()
     {
-        float t = 0;
-        while (t < 1)
+        while (Quaternion.Angle(rotatingDoorPanel.localRotation, targetRotation) > 0.1f)
         {
-            // Use smoothTime to control the speed of the swing
-            t += Time.deltaTime * (smoothTime / 2);
-            rotatingDoorPanel.localRotation = Quaternion.Slerp(rotatingDoorPanel.localRotation, targetRotation, t);
+            rotatingDoorPanel.localRotation = Quaternion.Slerp(
+                rotatingDoorPanel.localRotation,
+                targetRotation,
+                Time.deltaTime * smoothTime
+            );
             yield return null;
         }
         rotatingDoorPanel.localRotation = targetRotation;
     }
 
+    IEnumerator FadeAndLoadScene(string sceneName)
+    {
+        isTransitioning = true;
+        if (fadeCanvasGroup == null)
+        {
+            Debug.LogError("Fade Canvas Group is missing! Assign it in Inspector.");
+            SceneManager.LoadScene(sceneName);
+            yield break;
+        }
+
+        fadeCanvasGroup.blocksRaycasts = true;
+        float timer = 0;
+
+        while (timer < fadeDuration)
+        {
+            timer += Time.deltaTime;
+            fadeCanvasGroup.alpha = Mathf.Lerp(0, 1, timer / fadeDuration);
+            yield return null;
+        }
+
+        if (Application.CanStreamedLevelBeLoaded(sceneName))
+        {
+            SceneManager.LoadScene(sceneName);
+        }
+        else
+        {
+            Debug.LogError("Scene '" + sceneName + "' not in Build Settings!");
+        }
+    }
+
+    public void HandleTrigger(Collider other)
+    {
+        if (isExitDoor && isOpen && !isTransitioning)
+        {
+            if (other.CompareTag("Player") || other.name == "Marc")
+            {
+                StartCoroutine(FadeAndLoadScene("Scene04"));
+            }
+        }
+    }
+}
+
+// This class must exist outside the DoorController class but in the same file
+public class TriggerForwarder : MonoBehaviour
+{
+    public DoorController parentController;
     private void OnTriggerEnter(Collider other)
     {
-        if (isExitDoor && (other.CompareTag("Player") || other.name == "Marc"))
-        {
-            if (isOpen) SceneManager.LoadScene(nextSceneName);
-        }
+        if (parentController != null) parentController.HandleTrigger(other);
     }
 }

@@ -1,23 +1,75 @@
 using UnityEngine;
 using TMPro;
+using System.Collections;
+using UnityEngine.UI;
 
 public class SimpleDialogue : MonoBehaviour
 {
-	public GameObject vnUI;           // whole UI container
-	public GameObject mainTextObject; // textbox panel
-	public TMP_Text nameText;         // character name
-	public TMP_Text dialogueText;     // SpeakText
+    [Header("Prefab References")]
+    public GameObject vnUI;            // The parent container (VN_ui)
+    public GameObject textBox;         // Your TextBox prefab
+    public GameObject nextButton;      // Your NextButton prefab
+    public TMP_Text nameText;          // Text inside TextBox
+    public TMP_Text dialogueText;      // Text inside TextBox
 
-	public void ShowDialogue(string speaker, string line)
-	{
-		vnUI.SetActive(true);
-		mainTextObject.SetActive(true);
+    [Header("Settings")]
+    public float typingSpeed = 0.03f;
 
-		nameText.text = speaker;
+    private Coroutine typingCoroutine;
+    private bool isTyping = false;
+    private string currentFullLine;
 
-		// 🔥 SAME SYSTEM AS YOUR VN
-		TextCreator.fullText = line;
-		TextCreator.charCount = 0;
-		TextCreator.runTextPrint = true;
-	}
+    void Start()
+    {
+        if (vnUI != null) vnUI.SetActive(false);
+        if (nextButton != null) nextButton.SetActive(false);
+    }
+
+    public void ShowDialogue(string speaker, string line)
+    {
+        if (vnUI == null) return;
+
+        vnUI.SetActive(true);
+        textBox.SetActive(true);
+        nextButton.SetActive(false); // Hide next button while typing
+
+        nameText.text = speaker;
+        currentFullLine = line;
+
+        if (typingCoroutine != null) StopCoroutine(typingCoroutine);
+        typingCoroutine = StartCoroutine(TypeText(line));
+    }
+
+    private IEnumerator TypeText(string line)
+    {
+        isTyping = true;
+        dialogueText.text = "";
+
+        foreach (char letter in line.ToCharArray())
+        {
+            dialogueText.text += letter;
+            yield return new WaitForSeconds(typingSpeed);
+        }
+
+        isTyping = false;
+        nextButton.SetActive(true); // Show the NextButton once finished
+    }
+
+    // Call this from the NextButton's OnClick event
+    public void OnNextButtonClicked()
+    {
+        if (isTyping)
+        {
+            // Skip typing and show full text
+            StopCoroutine(typingCoroutine);
+            dialogueText.text = currentFullLine;
+            isTyping = false;
+            nextButton.SetActive(true);
+        }
+        else
+        {
+            // Close UI
+            vnUI.SetActive(false);
+        }
+    }
 }
