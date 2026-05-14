@@ -1,6 +1,6 @@
-using System;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 
 namespace UnityEngine.Rendering.Universal
 {
@@ -8,9 +8,8 @@ namespace UnityEngine.Rendering.Universal
     {
         public static UniversalAdditionalLightData2 GetUniversalAdditionalLightData(this Light light)
         {
-            var gameObject = light.gameObject;
-            if (!gameObject.TryGetComponent<UniversalAdditionalLightData2>(out var lightData))
-                lightData = gameObject.AddComponent<UniversalAdditionalLightData2>();
+            if (!light.TryGetComponent<UniversalAdditionalLightData2>(out var lightData))
+                lightData = light.gameObject.AddComponent<UniversalAdditionalLightData2>();
 
             return lightData;
         }
@@ -18,63 +17,42 @@ namespace UnityEngine.Rendering.Universal
 
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Light))]
-    public partial class UniversalAdditionalLightData2 : MonoBehaviour, ISerializationCallbackReceiver
+    public class UniversalAdditionalLightData2 : MonoBehaviour
     {
-        [Header("Resident Evil Style Settings")]
-        [SerializeField] bool m_UsePipelineSettings = true;
-        public bool usePipelineSettings { get => m_UsePipelineSettings; set => m_UsePipelineSettings = value; }
+        [Tooltip("When true, it boosts the brightness based on the multiplier below.")]
+        public bool boostBrightness = true;
 
-        [Header("Brightness Tweak")]
-        [Tooltip("Increase this value to make the light lighter and less dark.")]
         [Range(1f, 5f)]
-        public float intensityMultiplier = 1f;
+        public float intensityMultiplier = 1.5f;
 
-        // Shadow Resolution Tiers
-        public static readonly int ShadowResolutionLow = 256;
-        public static readonly int ShadowResolutionMedium = 512;
-        public static readonly int ShadowResolutionHigh = 1024;
+        private Light _light;
+        private Light cachedLight => _light ??= GetComponent<Light>();
 
-        [SerializeField] int m_AdditionalLightsShadowResolutionTier = 2;
-        public int additionalLightsShadowResolutionTier => m_AdditionalLightsShadowResolutionTier;
+        private float _baseIntensity = -1f;
 
-        [SerializeField] bool m_CustomShadowLayers = false;
-        public bool customShadowLayers
+        private void OnValidate() => ApplySettings();
+        private void Awake() => ApplySettings();
+
+        public void ApplySettings()
         {
-            get => m_CustomShadowLayers;
-            set { if (m_CustomShadowLayers != value) { m_CustomShadowLayers = value; SyncLayers(); } }
-        }
+            if (cachedLight == null) return;
 
-        [SerializeField] Vector2 m_LightCookieSize = Vector2.one;
-        public Vector2 lightCookieSize { get => m_LightCookieSize; set => m_LightCookieSize = value; }
+            // 1. Force Shadows OFF for maximum performance ("making it light")
+            cachedLight.shadows = LightShadows.None;
 
-        [SerializeField] SoftShadowQuality m_SoftShadowQuality = SoftShadowQuality.UsePipelineSettings;
-        public SoftShadowQuality softShadowQuality { get => m_SoftShadowQuality; set => m_SoftShadowQuality = value; }
-
-        [Header("Rendering Layers")]
-        [SerializeField] RenderingLayerMask m_RenderingLayers = RenderingLayerMask.defaultRenderingLayerMask;
-        public RenderingLayerMask renderingLayers { get => m_RenderingLayers; set { m_RenderingLayers = value; SyncLayers(); } }
-
-        private Light m_Light;
-        internal Light cachedLight
-        {
-            get
+            // 2. Handle Intensity Logic
+            if (boostBrightness)
             {
-                if (!m_Light) TryGetComponent(out m_Light);
-                return m_Light;
+                // Capture the original intensity once so we don't multiply infinitely
+                if (_baseIntensity < 0) _baseIntensity = cachedLight.intensity;
+
+                cachedLight.intensity = _baseIntensity * intensityMultiplier;
+            }
+            else if (_baseIntensity >= 0)
+            {
+                // Reset to normal if boost is toggled off
+                cachedLight.intensity = _baseIntensity;
             }
         }
-
-        void SyncLayers()
-        {
-            if (cachedLight != null)
-            {
-                cachedLight.renderingLayerMask = m_RenderingLayers;
-                // If you want the multiplier to affect the actual light component:
-                // cachedLight.intensity *= intensityMultiplier; 
-            }
-        }
-
-        public void OnBeforeSerialize() { }
-        public void OnAfterDeserialize() { SyncLayers(); }
     }
 }
