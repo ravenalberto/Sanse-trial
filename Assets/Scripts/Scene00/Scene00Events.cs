@@ -143,6 +143,8 @@ public class Scene00VN : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("", "She walks beside her friends."));
         dialogueQueue.Enqueue(new DialogueLine("", "The usual circle."));
 
+
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_HALLWAY]"));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "so guys, anong game want nyo?", darleneNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "siguro barilan, yung may zombies.", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Raven", "haha i like that. Parang resident evil.", ravenNeutral));
@@ -458,6 +460,11 @@ public class Scene00VN : MonoBehaviour
         else if (command == "[BG_INSIDE]")
         {
             StartBGTransition(insideuncleJohnsBG);
+            return false;
+        }
+        else if (command == "[BG_HALLWAY]")
+        {
+            StartBGTransition(hallwayBG);
             return false;
         }
         else if (command == "[BG_COMPUTER]")

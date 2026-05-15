@@ -4,54 +4,54 @@ using UnityEngine.Rendering.Universal;
 
 namespace UnityEngine.Rendering.Universal
 {
-    public static class LightExtensions
-    {
-        public static UniversalAdditionalLightData2 GetUniversalAdditionalLightData(this Light light)
-        {
-            if (!light.TryGetComponent<UniversalAdditionalLightData2>(out var lightData))
-                lightData = light.gameObject.AddComponent<UniversalAdditionalLightData2>();
-
-            return lightData;
-        }
-    }
-
+    /// <summary>
+    /// Adjusts lighting to be like a normal building that is almost pitch black.
+    /// Deep charcoal tones for an "unlit" feeling.
+    /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Light))]
-    public class UniversalAdditionalLightData2 : MonoBehaviour
+    public class AtmosphericLightController : MonoBehaviour
     {
-        [Tooltip("When true, it boosts the brightness based on the multiplier below.")]
-        public bool boostBrightness = true;
+        [Header("Atmosphere Settings")]
+        [Tooltip("Deep charcoal interior color for unlit areas.")]
+        public Color buildingAmbientColor = new Color(0.15f, 0.15f, 0.18f); // Drastically darkened from 0.5
 
-        [Range(1f, 5f)]
-        public float intensityMultiplier = 1.5f;
+        [Range(0f, 2f)]
+        [Tooltip("Overall brightness of the building. Lower values create an unlit feeling.")]
+        public float brightnessLevel = 0.35f; // Reduced from 0.6 to 0.35
+
+        [Header("Local Light Settings")]
+        [Tooltip("Intensity of the lights. Kept low to avoid looking like a bright torch.")]
+        public float softIntensity = 0.6f; // Reduced from 1.0 to 0.6
 
         private Light _light;
         private Light cachedLight => _light ??= GetComponent<Light>();
 
-        private float _baseIntensity = -1f;
+        private void OnValidate() => ApplyBuildingSettings();
+        private void Awake() => ApplyBuildingSettings();
 
-        private void OnValidate() => ApplySettings();
-        private void Awake() => ApplySettings();
-
-        public void ApplySettings()
+        public void ApplyBuildingSettings()
         {
             if (cachedLight == null) return;
 
-            // 1. Force Shadows OFF for maximum performance ("making it light")
+            // 1. Set the light color to a very pale, dim grey-white
+            cachedLight.color = new Color(0.8f, 0.8f, 0.85f);
+
+            // 2. Disable shadows for performance/brightness control
             cachedLight.shadows = LightShadows.None;
 
-            // 2. Handle Intensity Logic
-            if (boostBrightness)
-            {
-                // Capture the original intensity once so we don't multiply infinitely
-                if (_baseIntensity < 0) _baseIntensity = cachedLight.intensity;
+            // 3. Set the local intensity (very dim)
+            cachedLight.intensity = softIntensity;
 
-                cachedLight.intensity = _baseIntensity * intensityMultiplier;
-            }
-            else if (_baseIntensity >= 0)
+            // 4. Global Ambient Adjustment
+            // Flat mode with very low values creates the "no lights" atmosphere
+            RenderSettings.ambientMode = AmbientMode.Flat;
+            RenderSettings.ambientLight = buildingAmbientColor * brightnessLevel;
+
+            // 5. Keep range broad but the intensity dim
+            if (cachedLight.type == LightType.Point)
             {
-                // Reset to normal if boost is toggled off
-                cachedLight.intensity = _baseIntensity;
+                cachedLight.range = 15f; // Reduced range to keep light localized
             }
         }
     }

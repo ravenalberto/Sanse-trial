@@ -1,126 +1,130 @@
 using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
 
 public class MazeDialogueManager : MonoBehaviour
 {
+    public static MazeDialogueManager Instance;
+
     public SimpleDialogue dialogueSystem;
-    public GameObject dialogueChoicePanel; // Your Choice Prefab
+    public GameObject dialogueChoicePanel;
 
+    [Header("Movement Control")]
+    public MonoBehaviour playerMovementScript;
 
-     private int doorsOpened = 0;
-    private bool isDialogueActive = false;
-    private bool isEventActive = false;
+    [Header("UI Positioning Fix")]
+    [Tooltip("The coordinates you provided for the working UI position.")]
+    public Vector2 workingAnchoredPosition = new Vector2(-236.36f, -318.2f);
 
-    private Dictionary<int, List<DialogueLine>> storyMilestones = new Dictionary<int, List<DialogueLine>>();
+    private int doorsOpened = 0;
+
+    void Awake()
+    {
+        Instance = this;
+        Debug.Log("<color=white>MazeDialogueManager:</color> Script Awake and Running.");
+    }
 
     void Start()
     {
-        SetupMazeConversations();
+        if (dialogueSystem == null) Debug.LogError("MazeDialogueManager: DialogueSystem is NOT assigned!");
+        if (playerMovementScript == null) SetPlayerMovement(true);
     }
 
-    void SetupMazeConversations()
+    void Update()
     {
-        // Milestone: First Door
-        storyMilestones[1] = new List<DialogueLine> {
-            new DialogueLine("Darlene", "Eto na... Unang pinto. Please, sana hindi 'to loop."),
-            new DialogueLine("Marc", "Relax, Dar. Basta magkakasama tayo, walang maliligaw."),
-            new DialogueLine("Raven", "Statistically speaking, chances of looping increase the deeper we go. Focus lang.")
-        };
-
-        // Milestone: Fifth Door (A Choice Point)
-        storyMilestones[5] = new List<DialogueLine> {
-            new DialogueLine("Tetel", "Wait... parang narinig ko na yung tunog na 'to kanina."),
-            new DialogueLine("Darlene", "(Nararamdaman ko rin. Parang pinaglalaruan tayo ng hallway.)"),
-            new DialogueLine("SYSTEM", "[CHOICE_DIRECTION]")
-        };
+        // DEBUG TRIGGER: Press T to force the UI to appear
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            TriggerConversation("System", "Testing UI visibility... UI forced to Overlay and snapped to your working coordinates.");
+        }
     }
-
 
     public void OnDoorOpened()
     {
-        if (isEventActive) return;
+        if (dialogueSystem != null && dialogueSystem.vnUI != null && dialogueSystem.vnUI.activeInHierarchy) return;
+
         doorsOpened++;
+        Debug.Log("<color=green>Interaction Successful:</color> Door Opened: " + doorsOpened);
 
         if (doorsOpened == 1)
         {
-            dialogueSystem.ShowDialogue("Darlene", "Bukas na yung pinto... pero parang mas dumidilim sa loob.");
-        }
-        else if (doorsOpened == 5)
-        {
-            TriggerChoiceEvent();
+            TriggerConversation("Darlene", "Bukas na yung pinto... pero parang mas dumidilim sa loob.");
         }
         else
         {
-            // Random ambient dialogue for other doors
-            string[] clues = { "May narinig ba kayo?", "Marc, 'wag ka masyadong malayo.", "Raven, what's the logic here?" };
-            dialogueSystem.ShowDialogue("Darlene", clues[Random.Range(0, clues.Length)]);
+            string[] clues = { "May narinig ba kayo?", "Marc, 'wag ka masyadong malayo.", "Raven, look at the walls." };
+            TriggerConversation("Darlene", clues[Random.Range(0, clues.Length)]);
         }
     }
 
-    void TriggerChoiceEvent()
+    void TriggerConversation(string speaker, string line)
     {
-        isEventActive = true;
-        dialogueSystem.ShowDialogue("Raven", "Wait. Dalawa yung daan. Darlene, ikaw ang mag decide.");
+        if (dialogueSystem == null) return;
 
-        // We wait for the dialogue to finish before showing choices
-        StartCoroutine(ShowChoicesAfterDialogue());
-    }
+        SetPlayerMovement(false); // Stop player
 
-    IEnumerator ShowChoicesAfterDialogue()
-    {
-        // Wait until the dialogue UI is ready for input (Next button visible)
-        yield return new WaitUntil(() => dialogueSystem.nextButton.activeSelf);
-
-        // Hide next button and show choices instead
-        dialogueSystem.nextButton.SetActive(false);
-        dialogueChoicePanel.SetActive(true);
-    }
-    public void OnChoiceSelected(int choiceIndex)
-    {
-        dialogueChoicePanel.SetActive(false);
-        isEventActive = false;
-
-        if (choiceIndex == 0) // e.g., Choice A
-            dialogueSystem.ShowDialogue("Marc", "Sige, tiwala kami sayo Dar. Kanan tayo.");
-        else
-            dialogueSystem.ShowDialogue("Raven", "Logical. Mas malamig yung hangin sa kaliwa.");
-    }
-
-
-
-
-IEnumerator PlayConversation(List<DialogueLine> lines)
-    {
-        isDialogueActive = true;
-        foreach (var line in lines)
+        // --- THE "FORCE VISIBLE" FIX ---
+        if (dialogueSystem.vnUI != null)
         {
-            if (line.speaker == "SYSTEM" && line.text == "[CHOICE_DIRECTION]")
+            // 1. Force the Canvas to draw on top of everything (Overlay)
+            Canvas canvas = dialogueSystem.vnUI.GetComponentInParent<Canvas>();
+            if (canvas != null) canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+
+            dialogueSystem.vnUI.SetActive(true);
+
+            // 2. Force Transparency to 100%
+            CanvasGroup cg = dialogueSystem.vnUI.GetComponent<CanvasGroup>();
+            if (cg != null) cg.alpha = 1f;
+
+            // 3. Snap TextBox to the specific working coordinates you gave me
+            if (dialogueSystem.textBox != null)
             {
-                ShowMazeChoices();
-                yield break;
+                dialogueSystem.textBox.SetActive(true);
+                RectTransform rect = dialogueSystem.textBox.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    rect.anchoredPosition = workingAnchoredPosition;
+                    Debug.Log($"UI Snapped to: {workingAnchoredPosition}");
+                }
+                // Bring to front
+                dialogueSystem.textBox.transform.SetAsLastSibling();
             }
 
-            dialogueSystem.ShowDialogue(line.speaker, line.text);
-            yield return new WaitUntil(() => !dialogueSystem.vnUI.activeSelf);
+            dialogueSystem.vnUI.transform.SetAsLastSibling();
         }
-        isDialogueActive = false;
+
+        dialogueSystem.ShowDialogue(speaker, line);
+        StartCoroutine(WaitToResume());
     }
 
-    string GetRandomClue()
+    IEnumerator WaitToResume()
     {
-        string[] clues = {
-            "Malamig yung hangin dito... galing ba 'to sa labas?",
-            "Marc, 'wag ka ngang malayo sa amin!",
-            "Raven, tignan mo 'tong bitak sa pader. Parang bago.",
-            "I need to find that rooftop. Malapit na tayo, nararamdaman ko."
-        };
-        return clues[Random.Range(0, clues.Length)];
+        yield return new WaitForSeconds(0.5f);
+        if (dialogueSystem != null && dialogueSystem.vnUI != null)
+        {
+            yield return new WaitUntil(() => dialogueSystem.vnUI.activeInHierarchy == false);
+            SetPlayerMovement(true); // Resume player
+        }
     }
-
-    void ShowMazeChoices()
+    
+    void SetPlayerMovement(bool canMove)
     {
-        dialogueChoicePanel.SetActive(true);
-        // Choice logic handled by button clicks
+        if (playerMovementScript != null) playerMovementScript.enabled = canMove;
+        else
+        {
+            GameObject p = GameObject.Find("Marc");
+            if (p != null)
+            {
+                var moveComps = p.GetComponents<MonoBehaviour>();
+                foreach (var comp in moveComps)
+                {
+                    if (comp.GetType().Name.ToLower().Contains("movement"))
+                    {
+                        comp.enabled = canMove;
+                        playerMovementScript = comp;
+                        break;
+                    }
+                }
+            }
+        }
     }
 }

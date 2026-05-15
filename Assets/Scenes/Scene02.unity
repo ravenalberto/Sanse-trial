@@ -132,7 +132,7 @@ GameObject:
   - component: {fileID: 5751270}
   - component: {fileID: 5751269}
   m_Layer: 5
-  m_Name: BathroomBG
+  m_Name: Rooftop
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -533,7 +533,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 953897327}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Scene00VN, Assembly-CSharp
         m_MethodName: OnNotebookClicked
         m_Mode: 1
@@ -593,6 +593,81 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 1274686616272904678, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
   m_PrefabInstance: {fileID: 3638439358818780357}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &207678321
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 207678322}
+  - component: {fileID: 207678324}
+  - component: {fileID: 207678323}
+  m_Layer: 5
+  m_Name: DarleneNeutral (1)
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!224 &207678322
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207678321}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1084216055}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 414.66528, y: -3}
+  m_SizeDelta: {x: 394.8853, y: 757.8756}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &207678323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207678321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_Material: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_RaycastTarget: 1
+  m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
+  m_Maskable: 1
+  m_OnCullStateChanged:
+    m_PersistentCalls:
+      m_Calls: []
+  m_Sprite: {fileID: -141350368886170506, guid: 1530db1ebc1c74146a0fcbbd50ac2d26, type: 3}
+  m_Type: 0
+  m_PreserveAspect: 0
+  m_FillCenter: 1
+  m_FillMethod: 4
+  m_FillAmount: 1
+  m_FillClockwise: 1
+  m_FillOrigin: 0
+  m_UseSpriteMesh: 0
+  m_PixelsPerUnitMultiplier: 1
+--- !u!222 &207678324
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 207678321}
+  m_CullTransparentMesh: 1
 --- !u!1 &273814640
 GameObject:
   m_ObjectHideFlags: 0
@@ -606,7 +681,7 @@ GameObject:
   - component: {fileID: 273814642}
   - component: {fileID: 273814644}
   m_Layer: 5
-  m_Name: InsideUncleJohnsBG
+  m_Name: Canteen
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -691,7 +766,7 @@ GameObject:
   - component: {fileID: 313765942}
   - component: {fileID: 313765941}
   m_Layer: 5
-  m_Name: ZoomComputerBG
+  m_Name: StaircaseSunset
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -748,7 +823,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 554a7ff12dc416a4bb67cceb8f837f51, type: 3}
+  m_Texture: {fileID: 2800000, guid: 8bc39d8b940ce3446964ed703b953f3c, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -1263,11 +1338,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 491964593}
   m_CullTransparentMesh: 1
---- !u!1 &497759268 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 8226059158574878678, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
-  m_PrefabInstance: {fileID: 3638439358818780357}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &502441440
 GameObject:
   m_ObjectHideFlags: 0
@@ -1356,7 +1426,7 @@ GameObject:
   - component: {fileID: 529683159}
   - component: {fileID: 529683161}
   m_Layer: 5
-  m_Name: UnelcJohnsBG
+  m_Name: HighSchoolBG
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1428,11 +1498,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!1 &543856762 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2303965294142688041, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
-  m_PrefabInstance: {fileID: 3638439358818780357}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &580618594
 GameObject:
   m_ObjectHideFlags: 0
@@ -1552,11 +1617,6 @@ Canvas:
   m_SortingLayerID: 0
   m_SortingOrder: 0
   m_TargetDisplay: 0
---- !u!1 &589285215 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7102701813749293932, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
-  m_PrefabInstance: {fileID: 3638439358818780357}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &653311533
 GameObject:
   m_ObjectHideFlags: 0
@@ -1734,7 +1794,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 953897327}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Scene00VN, Assembly-CSharp
         m_MethodName: ChoiceC
         m_Mode: 1
@@ -1953,7 +2013,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 953897328}
-  - component: {fileID: 953897327}
+  - component: {fileID: 953897329}
   m_Layer: 0
   m_Name: VNManager
   m_TagString: Untagged
@@ -1961,66 +2021,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &953897327
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 953897326}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c001ccb3dbc93f4fa99bc448cf6b4e6, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Scene00VN
-  skipDelay: 0.05
-  textSpeed: 0.03
-  skipMode: 0
-  foodChoicePanel: {fileID: 1213490245}
-  dialogueChoicePanel: {fileID: 191242879}
-  foodButtonA: {fileID: 1833079577}
-  foodButtonB: {fileID: 2013022504}
-  foodButtonC: {fileID: 656606132}
-  closedNotebook: {fileID: 185130784}
-  openNotebook: {fileID: 2087260212}
-  choiceTurnA: {fileID: 1572652747}
-  choiceTurnB: {fileID: 1843149253}
-  choiceTruthA: {fileID: 1512446802}
-  choiceTruthB: {fileID: 543856762}
-  choiceNBA: {fileID: 497759268}
-  choiceNBB: {fileID: 589285215}
-  textBox: {fileID: 773629450}
-  charNameText: {fileID: 1533448364}
-  dialogueText: {fileID: 2142639409}
-  nextButton: {fileID: 966577843}
-  BathroomBG: {fileID: 5751267}
-  ZoomComputerBG: {fileID: 313765939}
-  KeyboardBG: {fileID: 1333062283}
-  SideviewcomputerBG: {fileID: 1217682964}
-  hallwayBG: {fileID: 1654978662}
-  complabBG: {fileID: 1429829782}
-  uncleJohnsBG: {fileID: 529683157}
-  insideuncleJohnsBG: {fileID: 273814640}
-  schoolBG: {fileID: 469901131}
-  currentBG: {fileID: 1654978662}
-  BGTransitionPanel: {fileID: 0}
-  FadeOutBG: {fileID: 0}
-  cristelNeutral: {fileID: 349206754}
-  cristelFrown: {fileID: 653311533}
-  marcLaugh: {fileID: 1195317826}
-  kuhNeutral: {fileID: 1798193356}
-  kuhScared: {fileID: 491964593}
-  ravenNeutral: {fileID: 2072028529}
-  darleneNeutral: {fileID: 886098001}
-  strangerNeutral: {fileID: 1353946656}
-  strangerSmile: {fileID: 1191125717}
-  darleneGlare: {fileID: 1301525934}
-  marcChide: {fileID: 392248658}
-  marcNeutral: {fileID: 925441761}
-  cristelSmile: {fileID: 1880162875}
-  sfxSource: {fileID: 0}
-  bgFadeSFX: {fileID: 0}
-  glitchSFX: {fileID: 0}
 --- !u!4 &953897328
 Transform:
   m_ObjectHideFlags: 0
@@ -2036,6 +2036,57 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &953897329
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 953897326}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e5eee8239035685438b10daa83e56a5b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Scene02
+  textSpeed: 0.02
+  skipMode: 0
+  textBox: {fileID: 773629450}
+  charNameText: {fileID: 1533448364}
+  dialogueText: {fileID: 2142639409}
+  nextButton: {fileID: 966577843}
+  choicePanelRaven: {fileID: 191242879}
+  choicePanelJump: {fileID: 191242879}
+  fadeCanvasGroup: {fileID: 0}
+  currentBG: {fileID: 448662047}
+  staircaseSunsetBG: {fileID: 0}
+  highSchoolBG: {fileID: 0}
+  canteenBG: {fileID: 0}
+  rooftopBG: {fileID: 0}
+  blackBG: {fileID: 0}
+  cristelNeutral: {fileID: 349206754}
+  cristelFrown: {fileID: 653311533}
+  cristelSmile: {fileID: 1880162875}
+  marcLaugh: {fileID: 1195317826}
+  marcNeutral: {fileID: 925441761}
+  marcChide: {fileID: 392248658}
+  kuhNeutral: {fileID: 1798193356}
+  kuhScared: {fileID: 491964593}
+  ravenNeutral: {fileID: 2072028529}
+  darleneNeutral: {fileID: 886098001}
+  darleneSad: {fileID: 886098001}
+  shadowedDarlene: {fileID: 0}
+  shadowedRaven: {fileID: 0}
+  shadowedMarc: {fileID: 0}
+  shadowedCristel: {fileID: 0}
+  highschoolCristel: {fileID: 0}
+  sfxSource: {fileID: 0}
+  musicSource: {fileID: 0}
+  intercomCrackle: {fileID: 0}
+  angelusPrayer: {fileID: 0}
+  staticCut: {fileID: 0}
+  glitchSFX: {fileID: 0}
+  bgFadeSFX: {fileID: 0}
+  heavyBreathing: {fileID: 0}
 --- !u!1 &966577843 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6134824743096641323, guid: 6812d00062e32aa4ca0e7e62b3e049fb, type: 3}
@@ -2292,6 +2343,7 @@ Transform:
   - {fileID: 925441762}
   - {fileID: 392248659}
   - {fileID: 886098002}
+  - {fileID: 207678322}
   - {fileID: 2072028530}
   m_Father: {fileID: 580618595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -3206,11 +3258,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1508572921}
   m_CullTransparentMesh: 1
---- !u!1 &1512446802 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7161082391850943061, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
-  m_PrefabInstance: {fileID: 3638439358818780357}
-  m_PrefabAsset: {fileID: 0}
 --- !u!114 &1533448364 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3598115535845849560, guid: eb7265545257d63439cbc592620035bc, type: 3}
@@ -3573,11 +3620,6 @@ AudioSource:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
---- !u!1 &1572652747 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 7312409725606946845, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
-  m_PrefabInstance: {fileID: 3638439358818780357}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1642830442
 GameObject:
   m_ObjectHideFlags: 0
@@ -4343,7 +4385,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 953897327}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Scene00VN, Assembly-CSharp
         m_MethodName: ChoiceA
         m_Mode: 1
@@ -4393,11 +4435,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1833079577}
   m_CullTransparentMesh: 1
---- !u!1 &1843149253 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 5810822445978297106, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
-  m_PrefabInstance: {fileID: 3638439358818780357}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1876264158
 GameObject:
   m_ObjectHideFlags: 0
@@ -4685,7 +4722,7 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 953897327}
+      - m_Target: {fileID: 0}
         m_TargetAssemblyTypeName: Scene00VN, Assembly-CSharp
         m_MethodName: ChoiceB
         m_Mode: 1
@@ -5175,7 +5212,7 @@ PrefabInstance:
     - target: {fileID: 329390325355244491, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     - target: {fileID: 1274686616272904678, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -5259,19 +5296,19 @@ PrefabInstance:
     - target: {fileID: 2277068662515770218, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     - target: {fileID: 5043147884066451606, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     - target: {fileID: 5184304703700513361, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     - target: {fileID: 5209616839943035863, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     - target: {fileID: 5927875683197160193, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_Name
       value: DialogueChoicePanel
@@ -5279,7 +5316,7 @@ PrefabInstance:
     - target: {fileID: 6386612079610491200, guid: 11556d9fd8d4ba0439881edf75c25b41, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -5296,7 +5333,7 @@ PrefabInstance:
     - target: {fileID: 4537206676507560805, guid: 6812d00062e32aa4ca0e7e62b3e049fb, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 953897327}
+      objectReference: {fileID: 0}
     - target: {fileID: 5465548362702500143, guid: 6812d00062e32aa4ca0e7e62b3e049fb, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5

@@ -524,8 +524,8 @@ public class BlockPuzzleManager : MonoBehaviour
 
 	void GoToNextScene()
 	{
-		PlayerPrefs.SetInt("Scene03_Event", 22);
-		SceneManager.LoadScene("StaircaseScene01");// change to your next scene name
+		PlayerPrefs.SetInt("Scene02", 22);
+		SceneManager.LoadScene("Scene02");// change to your next scene name
 	}
 
 	public void DebugSkipWin()

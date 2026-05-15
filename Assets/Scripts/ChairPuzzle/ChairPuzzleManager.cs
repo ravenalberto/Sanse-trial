@@ -105,6 +105,6 @@ public class ChairPuzzleManager : MonoBehaviour
 		yield return new WaitForSeconds(2f);
 		resultPanel.SetActive(false);
 
-		SceneManager.LoadScene("ClassroomScene01");
+		SceneManager.LoadScene("Scene01");
 	}
 }
