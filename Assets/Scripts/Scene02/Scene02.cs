@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 public class Scene02 : MonoBehaviour
 {
+    // Static transition flag to allow PacmanGameManager to communicate directly with this scene
+    public static bool CameFromPacman = false;
+
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
 
     public void AddTrust(string characterName, int amount)
@@ -83,7 +86,26 @@ public class Scene02 : MonoBehaviour
         if (choicePanelJump != null) choicePanelJump.SetActive(false);
         if (fadeCanvasGroup != null) fadeCanvasGroup.alpha = 0;
 
-        EnqueueScene02();
+        // --- RETRIEVE STATE SYSTEM (BOTH STATIC FIELD & PLAYERPREFS) ---
+        // Reads either the direct static boolean or the win state saved in PlayerPrefs
+        bool returningFromPacman = CameFromPacman || (PlayerPrefs.GetInt("CameFromPacman", 0) == 1);
+
+        if (returningFromPacman)
+        {
+            // Reset both keys immediately so reloads don't loop
+            CameFromPacman = false;
+            PlayerPrefs.SetInt("CameFromPacman", 0);
+            PlayerPrefs.Save();
+
+            Debug.Log("<color=green>Scene02 System:</color> Retained state found. Loading Rooftop Continuation.");
+            EnqueueScene02RooftopContinuation();
+        }
+        else
+        {
+            Debug.Log("<color=white>Scene02 System:</color> Starting Scene 02 normally from Staircase.");
+            EnqueueScene02NormalStart();
+        }
+
         ShowNextLine();
     }
 
@@ -93,52 +115,9 @@ public class Scene02 : MonoBehaviour
         if (skipMode && !isTyping && !choicePanelRaven.activeSelf && !choicePanelJump.activeSelf) ShowNextLine();
     }
 
-    void EnqueueScene02()
+    // --- PRE-PACMAN NARRATIVE FLOW ---
+    void EnqueueScene02NormalStart()
     {
-        // --- START OF SCENE 02 ---
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "…Ano tapos kana?", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "Ako?", ravenNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "hinde joke lang pala, gusto mo party hat?", marcLaugh));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Since ikaw unang nakapansin..", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Ano sa tingin mo ven?", cristelNeutral));
-
-        // Choice 6 Trigger
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_RAVEN_6]"));
-
-        dialogueQueue.Enqueue(new DialogueLine("", "No one else replied."));
-
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_INTERCOM_START]"));
-        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "Angelus Domini nuntiavit Mariae…"));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "…Again?", kuhNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_STATIC_CUT]"));
-        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "…Proceed."));
-
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "Ang bossy naman ng prayer na to.", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuya..", darleneNeutral));
-
-        dialogueQueue.Enqueue(new DialogueLine("", "Suddenly, Kuh stops on her tracks."));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Guys naririnig nyo ba yon?", kuhScared));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "Hinde, naiwan ko vape ko eh wala ako sa sarili ko.", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Hindi– parang–", kuhScared));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Parang..?", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Si Cristel ba yon?!?!", kuhScared));
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "ha? Andito ako!", cristelNeutral));
-
-        dialogueQueue.Enqueue(new DialogueLine("", "Cristel is standing right beside us. So why does Raven hear her voice upstairs too?"));
-        dialogueQueue.Enqueue(new DialogueLine("", "No. Not hear. Remember."));
-        dialogueQueue.Enqueue(new DialogueLine("", "But before anything else, Kuh was already running up ahead."));
-
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh?", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh wait–", darleneSad));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "What the helly?", ravenNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "ven tignan mo tong pader may swastika", marcNeutral));
-
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
-
-        // --- CHAPTER 3: KUH POV ---
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHAPTER_3_START]"));
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
-
         dialogueQueue.Enqueue(new DialogueLine("", "Kuh doesn’t really know what’s happening. She just hears her name being called."));
         dialogueQueue.Enqueue(new DialogueLine("Voice", "Kuh?"));
         dialogueQueue.Enqueue(new DialogueLine("Voice", "Kuh jane?"));
@@ -161,6 +140,7 @@ public class Scene02 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "!!?", kuhScared));
         dialogueQueue.Enqueue(new DialogueLine("Person", "Hindi ka namin maintindihan."));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Ha? Parang ikaw hindi ko maintindihan eh!", kuhScared));
+
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_HIGHSCHOOL]"));
 
         dialogueQueue.Enqueue(new DialogueLine("", "Suddenly, Kuh is in a different place. Teenagers in uniforms, an unfamiliar school."));
@@ -168,12 +148,12 @@ public class Scene02 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("Person", "Lagi ka nalang papansin, noh?"));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Ang kapal mo naman po kung ganon.", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Person", "Hindi mo ba narerealize walang gustong makitropa sayo? Iba kasi ang trip mo eh."));
-        dialogueQueue.Enqueue(new DialogueLine("Highschool Cristel", "Gusto ko lang naman kayo maging kaibigan..", highschoolCristel));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Gusto ko lang naman kayo maging kaibigan..", highschoolCristel));
         dialogueQueue.Enqueue(new DialogueLine("Person", "Kaso, nakakahiya kang kasama. Pano yun?"));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Eh kung suntukin kaya kita—", kuhNeutral));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GLITCH]"));
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Oo okay lang naman ako, thank you sa pagtatanong.", cristelSmile));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Oo okay lang naman ako, thank you sa pagtatanong.", highschoolCristel));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "You’re welcome.", marcNeutral)); // Glitching as Marc
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "??", kuhScared));
 
@@ -193,18 +173,24 @@ public class Scene02 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
 
         // --- DISTORTED FRIENDS ---
-        dialogueQueue.Enqueue(new DialogueLine("Shadowed Darlene", "Bakit mo naman kami iniwan?", shadowedDarlene));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Bakit mo naman kami iniwan?", shadowedDarlene));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "OMAYGAD!?", kuhScared));
-        dialogueQueue.Enqueue(new DialogueLine("Shadowed Raven", "Naiintindihan mo ba talaga kami, Kuh?", shadowedRaven));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Naiintindihan mo ba talaga kami, Kuh?", shadowedRaven));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "SINO BA KAYO? MUKHA KAYONG MGA AI", kuhScared));
-        dialogueQueue.Enqueue(new DialogueLine("Shadowed Marc", "Hehe, kami ba talaga ang AI o ikaw?", shadowedMarc));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Hehe, kami ba talaga ang AI o ikaw?", shadowedMarc));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "LAHAT KAYO", kuhScared));
-        dialogueQueue.Enqueue(new DialogueLine("Shadowed Cristel", "Kuh.. wag mo naman ako hayaan mawala..", shadowedCristel));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Kuh.. wag mo naman ako hayaan mawala..", shadowedCristel));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "ok Ggs gooodgame, ggwap, nice g, well played", kuhScared));
 
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_PACMAN]"));
 
-        // --- ROOFTOP SECTION (POST MINIGAME) ---
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_BLACK]"));
+        dialogueQueue.Enqueue(new DialogueLine(" ", "Collect all the orbs to be able to pass through the door"));
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_PACMAN]"));
+    }
+
+    // --- POST-PACMAN NARRATIVE FLOW ---
+    void EnqueueScene02RooftopContinuation()
+    {
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_ROOFTOP]"));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Why am I here now?", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Where is Cristel?", kuhNeutral));
@@ -331,10 +317,10 @@ public class Scene02 : MonoBehaviour
                 if (sfxSource && glitchSFX) sfxSource.PlayOneShot(glitchSFX);
                 return false;
             case "[FADE_OUT]":
-                StartFade(1.0f);
+                StartFade(2.0f);
                 return true;
             case "[FADE_IN]":
-                StartFade(0.0f);
+                StartFade(1.0f);
                 return true;
             case "[BG_HIGHSCHOOL]": StartBGTransition(highSchoolBG); return false;
             case "[BG_CANTEEN]": StartBGTransition(canteenBG); return false;
@@ -342,10 +328,10 @@ public class Scene02 : MonoBehaviour
             case "[BG_STAIRCASE]": StartBGTransition(staircaseSunsetBG); return false;
             case "[BG_BLACK]": StartBGTransition(blackBG); return false;
             case "[GOTO_PACMAN]":
-                SceneManager.LoadScene("PacmanChaseScene");
+                SceneManager.LoadScene("PacmanChaseStair2");
                 return true;
             case "[SCENE_END]":
-                SceneManager.LoadScene("Scene03");
+                SceneManager.LoadScene("Scene04");
                 return true;
             default: return false;
         }
@@ -360,7 +346,7 @@ public class Scene02 : MonoBehaviour
 
     IEnumerator FadeBackground(GameObject newBG)
     {
-        if (bgFadeSFX) sfxSource.PlayOneShot(bgFadeSFX);
+        if (bgFadeSFX && sfxSource != null) sfxSource.PlayOneShot(bgFadeSFX);
         if (currentBG) currentBG.SetActive(false);
         newBG.SetActive(true);
         currentBG = newBG;
@@ -400,6 +386,16 @@ public class Scene02 : MonoBehaviour
         }
         isTyping = false;
         nextButton.SetActive(true);
+    }
+
+    void DisableAllBGs()
+    {
+        if (staircaseSunsetBG) staircaseSunsetBG.SetActive(false);
+        if (highSchoolBG) highSchoolBG.SetActive(false);
+        if (canteenBG) canteenBG.SetActive(false);
+        if (rooftopBG) rooftopBG.SetActive(false);
+        if (blackBG) blackBG.SetActive(false);
+        currentBG = null;
     }
 
     void HideAllPortraits()

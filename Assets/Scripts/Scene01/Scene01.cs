@@ -7,6 +7,28 @@ using UnityEngine.UI;
 
 public class Scene01 : MonoBehaviour
 {
+    // Static state tracker to maintain progress across scene loads
+    public static bool cameFromBlockPuzzle = false;
+    private static string lastActiveScene = "";
+
+    // AUTOMATIC SCENE TRACKER: Automatically sets cameFromBlockPuzzle to true when returning from the minigame
+    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.BeforeSceneLoad)]
+    private static void TrackSceneChanges()
+    {
+        SceneManager.activeSceneChanged -= OnActiveSceneChanged;
+        SceneManager.activeSceneChanged += OnActiveSceneChanged;
+    }
+
+    private static void OnActiveSceneChanged(Scene current, Scene next)
+    {
+        lastActiveScene = current.name;
+        if (next.name == "Scene01" && lastActiveScene == "BlockPuzzleScene")
+        {
+            cameFromBlockPuzzle = true;
+            Debug.Log("<color=green>Scene01 System:</color> Automatically detected transition back from 'BlockPuzzleScene'. cameFromBlockPuzzle has been set to true!");
+        }
+    }
+
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
 
     public void AddTrust(string characterName, int amount)
@@ -18,7 +40,7 @@ public class Scene01 : MonoBehaviour
 
     private Coroutine typingCoroutine;
     private Coroutine fadeCoroutine;
-    private Coroutine bgFadeCoroutine; // Added for BG transitions
+    private Coroutine bgFadeCoroutine;
     public float textSpeed = 0.02f;
     public bool skipMode = false;
 
@@ -33,13 +55,24 @@ public class Scene01 : MonoBehaviour
     public TMP_Text charNameText;
     public TMP_Text dialogueText;
     public GameObject nextButton;
-    public GameObject choicePanel;
+
+    [Header("Choice Panels")]
+    public GameObject choicePanel;      // For Choice 5 (Gates)
+    public GameObject choicePanel6;     // For Choice 6 (Post-Puzzle)
     public Button choiceButtonB;
     public GameObject gcBackgroundUI;
 
     [Header("Notification UI Design")]
     public GameObject notificationA;
     public GameObject notificationB;
+    [Tooltip("Design for Choice 6A: Marc's fault (Trust down)")]
+    public GameObject notification6A;
+    [Tooltip("Design for Choice 6B: I don't know")]
+    public GameObject notification6B;
+    [Tooltip("Design for Choice 6C: It's not that simple (Trust up)")]
+    public GameObject notification6C;
+    [Tooltip("Design for Choice 6D: We all let it happen (Trust up)")]
+    public GameObject notification6D;
     public float notificationDisplayTime = 3.0f;
 
     [Header("Backgrounds")]
@@ -49,7 +82,7 @@ public class Scene01 : MonoBehaviour
     public GameObject staircaseSunsetBG;
     public GameObject phoneBG;
     public GameObject phonemessageBG;
-    private GameObject currentBG; // Tracks currently active background
+    private GameObject currentBG;
     public CanvasGroup fadeCanvasGroup;
 
     [Header("Audio")]
@@ -60,7 +93,10 @@ public class Scene01 : MonoBehaviour
     public AudioClip glitchSFX;
     public AudioClip bellSFX;
     public AudioClip stretchSFX;
-    public AudioClip bgFadeSFX; // Added for BG transitions
+    public AudioClip bgFadeSFX;
+    public AudioClip staticCrackleSFX; // Intercom Static Sound
+    public AudioClip staticCutSFX;     // Static abrupt cut sound
+    public AudioClip notificationSFX;  // Sound effect for the notifications
 
     [Header("Portraits")]
     public GameObject cristelNeutral; public GameObject cristelFrown; public GameObject cristelSmile;
@@ -72,22 +108,41 @@ public class Scene01 : MonoBehaviour
 
     void Start()
     {
-        // Initialization
+        // Initial setup and resets
         DisableAllBGs();
         if (textBox != null) textBox.SetActive(false);
         if (choicePanel != null) choicePanel.SetActive(false);
+        if (choicePanel6 != null) choicePanel6.SetActive(false);
         if (gcBackgroundUI != null) gcBackgroundUI.SetActive(false);
+
+        // Ensure all choice notifications start hidden
+        if (notificationA != null) notificationA.SetActive(false);
+        if (notificationB != null) notificationB.SetActive(false);
+        if (notification6A != null) notification6A.SetActive(false);
+        if (notification6B != null) notification6B.SetActive(false);
+        if (notification6C != null) notification6C.SetActive(false);
+        if (notification6D != null) notification6D.SetActive(false);
 
         if (fadeCanvasGroup != null) fadeCanvasGroup.alpha = 0;
 
-        EnqueueScene01();
+        // Check if we are returning from the minigame
+        if (cameFromBlockPuzzle)
+        {
+            cameFromBlockPuzzle = false; // reset
+            EnqueueScene01PostPuzzle();
+        }
+        else
+        {
+            EnqueueScene01();
+        }
+
         ShowNextLine();
     }
 
     void Update()
     {
         skipMode = Input.GetKey(KeyCode.LeftControl);
-        if (skipMode && !isTyping && !choicePanel.activeSelf) ShowNextLine();
+        if (skipMode && !isTyping && !choicePanel.activeSelf && !choicePanel6.activeSelf) ShowNextLine();
     }
 
     void EnqueueScene01()
@@ -215,12 +270,59 @@ public class Scene01 : MonoBehaviour
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_PHONE]"));
-        dialogueQueue.Enqueue(new DialogueLine("", "Raven pulls out her phone"));
-        
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
+        dialogueQueue.Enqueue(new DialogueLine("", "Raven pulls out her phone."));
 
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
+        dialogueQueue.Enqueue(new DialogueLine("", "In the game, we must be able to escape and find the door."));
         dialogueQueue.Enqueue(new DialogueLine("", "Use WSAD to move and press E to open the door."));
         dialogueQueue.Enqueue(new DialogueLine("", "Follow the blood traces to find the door to the exit."));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_MAZE]"));
+    }
+
+    void EnqueueScene01PostPuzzle()
+    {
+        dialogueQueue.Clear();
+        tempQueue.Clear();
+
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_STAIRCASE]"));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "…Ano tapos kana?", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "Ako?", ravenNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "hinde joke lang pala, gusto mo party hat?", marcLaugh));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Since ikaw unang nakapansin..", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Ano sa tingin mo ven?", cristelNeutral));
+
+        // Choice 6 Trigger
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_RAVEN_6]"));
+
+        dialogueQueue.Enqueue(new DialogueLine("", "No one else replied."));
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_INTERCOM_START]"));
+        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "Angelus Domini nuntiavit Mariae…"));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "…Again?", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_STATIC_CUT]"));
+        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "…Proceed."));
+
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Ang bossy naman ng prayer na to.", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuya..", darleneNeutral));
+
+        dialogueQueue.Enqueue(new DialogueLine("", "Suddenly, Kuh stops on her tracks."));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Guys naririnig nyo ba yon?", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Hinde, naiwan ko vape ko eh wala ako sa sarili ko.", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Hindi– parang–", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Parang..?", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Si Cristel ba yon?!?!", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "ha? Andito ako!", cristelNeutral));
+
+        dialogueQueue.Enqueue(new DialogueLine("", "Cristel is standing right beside us. So why does Raven hear her voice upstairs too? No.Not hear. Remember."));
+        dialogueQueue.Enqueue(new DialogueLine("", "But before anything else, Kuh was already running up ahead."));
+
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh?", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh wait–", darleneSad));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "What the helly?", ravenNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "ven tignan mo tong pader may swastika", marcNeutral));
+
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_SCENE02]"));
     }
 
     public void OnChoiceSelected(int index)
@@ -239,7 +341,58 @@ public class Scene01 : MonoBehaviour
 
         choicePanel.SetActive(false);
         glitchedClickCount = 0;
+        TriggerNotification(notificationA);
         ShowNextLine();
+    }
+
+    public void OnChoice6Selected(int index)
+    {
+        choicePanel6.SetActive(false);
+        usingTempQueue = true;
+        tempQueue.Clear();
+
+        switch (index)
+        {
+            case 0: // Choice 6A
+                AddTrust("Marc", -10);
+                TriggerNotification(notification6A);
+                tempQueue.Enqueue(new DialogueLine("Marc", "Syempre ako nalang lagi may kasalanan diba?", marcChide));
+                break;
+            case 1: // Choice 6B
+                AddTrust("Marc", 0);
+                TriggerNotification(notification6B);
+                tempQueue.Enqueue(new DialogueLine("Marc", "Ayos, sana nagblockblast nalang din ako.", marcNeutral));
+                break;
+            case 2: // Choice 6C
+                AddTrust("Marc", 10);
+                TriggerNotification(notification6C);
+                tempQueue.Enqueue(new DialogueLine("Marc", "…Sana makita nyo rin yung perspective ko kung ganyan.", marcNeutral));
+                break;
+            case 3: // Choice 6D
+                AddTrust("Marc", 15);
+                TriggerNotification(notification6D);
+                tempQueue.Enqueue(new DialogueLine("Marc", "…I agree.", marcNeutral));
+                break;
+        }
+
+        ShowNextLine();
+    }
+
+    // --- NOTIFICATION HANDLER SYSTEM ---
+    private void TriggerNotification(GameObject notificationObj)
+    {
+        if (notificationObj != null)
+        {
+            StartCoroutine(ShowNotificationRoutine(notificationObj));
+        }
+    }
+
+    private IEnumerator ShowNotificationRoutine(GameObject notificationObj)
+    {
+        notificationObj.SetActive(true);
+        if (sfxSource != null && notificationSFX != null) sfxSource.PlayOneShot(notificationSFX);
+        yield return new WaitForSeconds(notificationDisplayTime);
+        notificationObj.SetActive(false);
     }
 
     public void OnNextClick()
@@ -309,6 +462,10 @@ public class Scene01 : MonoBehaviour
                 choicePanel.SetActive(true);
                 nextButton.SetActive(false);
                 return true;
+            case "[CHOICE_RAVEN_6]":
+                choicePanel6.SetActive(true);
+                nextButton.SetActive(false);
+                return true;
             case "[SFX_ANGELUS]":
                 if (musicSource != null && angelusSFX != null) musicSource.PlayOneShot(angelusSFX);
                 return false;
@@ -317,6 +474,13 @@ public class Scene01 : MonoBehaviour
                 return false;
             case "[SFX_STRETCH]":
                 if (sfxSource != null && stretchSFX != null) sfxSource.PlayOneShot(stretchSFX);
+                return false;
+            case "[SFX_INTERCOM_START]":
+                if (sfxSource != null && staticCrackleSFX != null) sfxSource.PlayOneShot(staticCrackleSFX);
+                if (musicSource != null && angelusSFX != null) musicSource.PlayOneShot(angelusSFX);
+                return false;
+            case "[SFX_STATIC_CUT]":
+                if (sfxSource != null && staticCutSFX != null) sfxSource.PlayOneShot(staticCutSFX);
                 return false;
             case "[FADE_OUT]":
                 StartFade(1.0f, 0.8f);
@@ -341,8 +505,13 @@ public class Scene01 : MonoBehaviour
                 StartBGTransition(staircaseSunsetBG); return false;
             case "[BG_PHONE]":
                 StartBGTransition(phoneBG); return false;
+            case "[BG_PHONEMESSAGE]":
+                StartBGTransition(phonemessageBG); return false;
             case "[GOTO_MAZE]":
                 SceneManager.LoadScene("BlockPuzzleScene");
+                return true;
+            case "[GOTO_SCENE02]":
+                SceneManager.LoadScene("Scene02");
                 return true;
             default: return false;
         }
@@ -366,7 +535,6 @@ public class Scene01 : MonoBehaviour
         if (bgFadeSFX != null && sfxSource != null)
             sfxSource.PlayOneShot(bgFadeSFX);
 
-        // Fade OUT current background
         if (currentBG != null)
         {
             CanvasGroup oldCG = currentBG.GetComponent<CanvasGroup>();
@@ -384,7 +552,6 @@ public class Scene01 : MonoBehaviour
             currentBG.SetActive(false);
         }
 
-        // Fade IN new background
         newBG.SetActive(true);
         CanvasGroup newCG = newBG.GetComponent<CanvasGroup>();
         if (newCG != null)
@@ -407,7 +574,6 @@ public class Scene01 : MonoBehaviour
         currentBG = newBG;
     }
 
-    // Overlay Fading (CanvasGroup Fader)
     void StartFade(float targetAlpha, float duration)
     {
         if (fadeCoroutine != null) StopCoroutine(fadeCoroutine);
@@ -443,6 +609,9 @@ public class Scene01 : MonoBehaviour
         if (hallwayBG) hallwayBG.SetActive(false);
         if (classroomBG) classroomBG.SetActive(false);
         if (staircaseSunsetBG) staircaseSunsetBG.SetActive(false);
+        if (phoneBG) phoneBG.SetActive(false);
+        if (phonemessageBG) phonemessageBG.SetActive(false);
+        currentBG = null;
     }
 
     void HideAllPortraits()

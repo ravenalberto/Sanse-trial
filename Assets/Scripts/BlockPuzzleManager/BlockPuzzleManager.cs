@@ -524,11 +524,26 @@ public class BlockPuzzleManager : MonoBehaviour
 
 	void GoToNextScene()
 	{
-		PlayerPrefs.SetInt("Scene02", 22);
-		SceneManager.LoadScene("Scene02");// change to your next scene name
+
+        Scene01.cameFromBlockPuzzle = true;
+
+
+        PlayerPrefs.SetInt("Scene01", 22);
+		SceneManager.LoadScene("Scene01");// change to your next scene name
 	}
 
-	public void DebugSkipWin()
+    // Inside your Block Puzzle script's Win/Transition method:
+    public void FinishPuzzleAndReturn()
+    {
+        // 1. Manually set the static variable to true BEFORE loading the scene
+        Scene01.cameFromBlockPuzzle = true;
+
+        // 2. Load the scene (Make sure the scene name matches exactly)
+        UnityEngine.SceneManagement.SceneManager.LoadScene("Scene01");
+    }
+
+
+    public void DebugSkipWin()
 	{
 		Debug.Log("DEBUG SKIP → WIN");
 

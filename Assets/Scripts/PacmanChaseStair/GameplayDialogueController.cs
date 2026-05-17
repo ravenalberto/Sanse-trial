@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 public class GameplayDialogueController : MonoBehaviour
 {
@@ -106,11 +107,11 @@ public class GameplayDialogueController : MonoBehaviour
 
 	public void OnSkipPressed()
 	{
-		Debug.Log("SKIP PRESSED");
+        Scene02.CameFromPacman = true;
 
-		waitingForNext = false;
-		ResumeGameplay();
-	}
+        // 2. Load Scene02 to continue the story from the rooftop
+        SceneManager.LoadScene("Scene02");
+    }
 
 	public void OnNextPressed()
 	{

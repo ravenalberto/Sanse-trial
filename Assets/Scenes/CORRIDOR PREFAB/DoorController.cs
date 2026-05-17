@@ -109,7 +109,7 @@ public class DoorController : MonoBehaviour
             if (manager != null) manager.OnDoorOpened();
 
             // Start the fade and scene load
-            StartCoroutine(FadeAndLoadScene("Scene04"));
+            StartCoroutine(FadeAndLoadScene("Scene00 1"));
             return;
         }
 
@@ -176,7 +176,7 @@ public class DoorController : MonoBehaviour
         {
             if (other.CompareTag("Player") || other.name == "Marc")
             {
-                StartCoroutine(FadeAndLoadScene("Scene04"));
+                StartCoroutine(FadeAndLoadScene("Scene00 1"));
             }
         }
     }
