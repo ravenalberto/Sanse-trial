@@ -274,9 +274,9 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("", "Raven pulls out her phone."));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
-        dialogueQueue.Enqueue(new DialogueLine("", "In the game, we must be able to escape and find the door."));
-        dialogueQueue.Enqueue(new DialogueLine("", "Use WSAD to move and press E to open the door."));
-        dialogueQueue.Enqueue(new DialogueLine("", "Follow the blood traces to find the door to the exit."));
+        dialogueQueue.Enqueue(new DialogueLine("", "Click and drop the randomized block shapes onto the grid to complete full rows or columns, which blasts them off the board."));
+        dialogueQueue.Enqueue(new DialogueLine("", "If the board fills up and none of your available block shapes can fit into the remaining open spaces,"));
+        dialogueQueue.Enqueue(new DialogueLine("", "it's an instant Game Over—even if there is still time left on the clock."));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_MAZE]"));
     }
 

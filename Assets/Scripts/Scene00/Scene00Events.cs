@@ -852,6 +852,8 @@ public class Scene00VN : MonoBehaviour
             tempQueue.Enqueue(new DialogueLine("Cristel", "No… it does."));
             tempQueue.Enqueue(new DialogueLine("Cristel", "(This is easy. I know them. I know where everyone belongs. Right?)"));
 
+
+            tempQueue.Enqueue(new DialogueLine("", "Kindly place the chairs on the white square blanks based on the clue given by dragging and dropping the chairs."));
             tempQueue.Enqueue(new DialogueLine("SYSTEM", "[START_CHAIR_PUZZLE]"));
             return false;
         }
