@@ -24,16 +24,33 @@ public class Interactable : MonoBehaviour
 
 	public bool isFinalMarc = false;
 
+	public string characterID;
+
 	void Update()
 	{
 		// 🎬 FINAL MARC
 		if (isFinalMarc)
 		{
+			Debug.Log("FINAL MARC CHECK");
+
+			if (InteractionProgress.Instance == null)
+			{
+				Debug.Log("INTERACTION PROGRESS NULL");
+				return;
+			}
+
+			Debug.Log(
+				"COUNT: " +
+				InteractionProgress.Instance.interactionsFinished
+			);
+
 			if (
 				InteractionProgress.Instance.interactionsFinished >= 4 &&
 				Input.GetKeyDown(KeyCode.E)
 			)
 			{
+				Debug.Log("MARC TALK TRIGGERED");
+
 				Talk();
 			}
 
@@ -51,6 +68,9 @@ public class Interactable : MonoBehaviour
 
 	void Talk()
 	{
+		Debug.Log("TALK STARTED");
+		Debug.Log("alreadyInteracted: " + alreadyInteracted);
+
 		if (alreadyInteracted) return;
 
 		alreadyInteracted = true;
@@ -58,7 +78,8 @@ public class Interactable : MonoBehaviour
 		dialogueSystem.ShowDialogue(
 	speakerNames,
 	dialogueLines,
-	gameObject
+	gameObject,
+	characterID
 );
 
 		if (useChoices)

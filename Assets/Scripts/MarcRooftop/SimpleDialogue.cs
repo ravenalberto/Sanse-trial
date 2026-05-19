@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using System.Collections;
 using UnityEngine.UI;
+using UnityEngine.SceneManagement;
 
 public class SimpleDialogue : MonoBehaviour
 {
@@ -25,6 +26,8 @@ public class SimpleDialogue : MonoBehaviour
 	private GameObject currentCharacter;
 
 	private string currentCharacterName;
+	string currentCharacterID;
+
 
 
 	[Header("Prefab References")]
@@ -58,7 +61,8 @@ public class SimpleDialogue : MonoBehaviour
 	public void ShowDialogue(
 	string[] speakers,
 	string[] lines,
-	GameObject characterObject
+	GameObject characterObject,
+	string characterID
 )
 	{
 		playerMovement.canMove = false;
@@ -73,8 +77,10 @@ public class SimpleDialogue : MonoBehaviour
 		currentSpeakers = speakers;
 		currentLines = lines;
 		currentCharacter = characterObject;
-		currentCharacterName = characterObject.name;
 
+		currentCharacterID = characterID;
+
+		currentCharacterName = characterID.ToLower();
 
 		currentLine = 0;
 
@@ -86,7 +92,8 @@ public class SimpleDialogue : MonoBehaviour
 		ShowDialogue(
 			new string[] { speaker },
 			new string[] { line },
-			null
+			null,
+			""
 		);
 	}
 
@@ -182,7 +189,22 @@ public class SimpleDialogue : MonoBehaviour
 		choiceUI.SetActive(false);
 		hasChoice = false;
 
-		if (currentCharacterName.Contains("cristel"))
+		if (currentCharacterID == "Raven")
+			ChoiceManager.Instance.ravenRed = true;
+
+		if (currentCharacterID == "Darlene")
+			ChoiceManager.Instance.darleneRed = true;
+
+		if (currentCharacterID == "Kuh")
+			ChoiceManager.Instance.kuhRed = true;
+
+		if (currentCharacterID == "Cristel")
+			ChoiceManager.Instance.cristelRed = true;
+
+		string name = currentCharacterName.ToLower();
+
+		// 🔴 CRISTEL
+		if (name.Contains("cristel"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -204,7 +226,8 @@ public class SimpleDialogue : MonoBehaviour
 			};
 		}
 
-		else if (currentCharacterName.Contains("raven"))
+		// 🔴 RAVEN
+		else if (name.Contains("raven"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -220,12 +243,15 @@ public class SimpleDialogue : MonoBehaviour
 			};
 		}
 
-		else if (currentCharacterName.Contains("darlene"))
+		// 🔴 DARLENE
+		else if (name.Contains("darlene"))
 		{
 			resultSpeakers = new string[]
 			{
 			"Darlene",
-			"Marc", "Darlene", "Marc"
+			"Marc",
+			"Darlene",
+			"Marc"
 			};
 
 			resultLines = new string[]
@@ -240,7 +266,8 @@ public class SimpleDialogue : MonoBehaviour
 			};
 		}
 
-		else if (currentCharacterName.Contains("kuh"))
+		// 🔴 KUH
+		else if (name.Contains("kuh"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -252,16 +279,18 @@ public class SimpleDialogue : MonoBehaviour
 			"Wait omg pwede nako umalis legit?"
 			};
 		}
-		else if (currentCharacterName.ToLower().Contains("marc"))
+
+		// 🔴 MARC
+		else if (name.Contains("marc"))
 		{
 			resultSpeakers = new string[]
 			{
-		"Marc"
+			"Marc"
 			};
 
 			resultLines = new string[]
 			{
-		"Haha ayoko nga, tinatamad na nga ako magcode ng choice results eh papahirapan mo pa ako."
+			"Haha ayoko nga, tinatamad na nga ako magcode ng choice results eh papahirapan mo pa ako."
 			};
 		}
 
@@ -274,8 +303,22 @@ public class SimpleDialogue : MonoBehaviour
 		choiceUI.SetActive(false);
 		hasChoice = false;
 
+		if (currentCharacterID == "Raven")
+			ChoiceManager.Instance.ravenRed = false;
+
+		if (currentCharacterID == "Darlene")
+			ChoiceManager.Instance.darleneRed = false;
+
+		if (currentCharacterID == "Kuh")
+			ChoiceManager.Instance.kuhRed = false;
+
+		if (currentCharacterID == "Cristel")
+			ChoiceManager.Instance.cristelRed = false;
+
+		string name = currentCharacterName.ToLower();
+
 		// 🔵 CRISTEL
-		if (currentCharacterName.Contains("cristel"))
+		if (name.Contains("cristel"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -295,7 +338,7 @@ public class SimpleDialogue : MonoBehaviour
 		}
 
 		// 🔵 RAVEN
-		else if (currentCharacterName.Contains("raven"))
+		else if (name.Contains("raven"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -312,7 +355,7 @@ public class SimpleDialogue : MonoBehaviour
 		}
 
 		// 🔵 DARLENE
-		else if (currentCharacterName.Contains("darlene"))
+		else if (name.Contains("darlene"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -332,7 +375,7 @@ public class SimpleDialogue : MonoBehaviour
 		}
 
 		// 🔵 KUH
-		else if (currentCharacterName.Contains("kuh"))
+		else if (name.Contains("kuh"))
 		{
 			resultSpeakers = new string[]
 			{
@@ -345,16 +388,17 @@ public class SimpleDialogue : MonoBehaviour
 			};
 		}
 
-		else if (currentCharacterName.ToLower().Contains("marc"))
+		// 🔵 MARC
+		else if (name.Contains("marc"))
 		{
 			resultSpeakers = new string[]
 			{
-		"Marc"
+			"Marc"
 			};
 
 			resultLines = new string[]
 			{
-		"Haha ayoko nga, tinatamad na nga ako magcode ng choice results eh papahirapan mo pa ako."
+			"Haha ayoko nga, tinatamad na nga ako magcode ng choice results eh papahirapan mo pa ako."
 			};
 		}
 
@@ -363,6 +407,12 @@ public class SimpleDialogue : MonoBehaviour
 
 	void StartResultDialogue()
 	{
+		if (resultSpeakers == null || resultLines == null)
+		{
+			Debug.LogError("RESULT DIALOGUE NOT SET");
+			return;
+		}
+
 		currentSpeakers = resultSpeakers;
 		currentLines = resultLines;
 
@@ -374,17 +424,32 @@ public class SimpleDialogue : MonoBehaviour
 
 	void EndDialogue()
 	{
+		Debug.Log("ENDING DIALOGUE");
+		Debug.Log("CURRENT CHARACTER: " + currentCharacterName);
 
+		// 🎬 FINAL MARC
+		if (currentCharacterName.ToLower().Contains("marc"))
+		{
+			Debug.Log("LOADING EPILOGUE");
+
+			SceneManager.LoadScene("EpilogueScene");
+			return;
+		}
+
+		// COUNT INTERACTIONS
+		if (
+			!currentCharacterName.Contains("marc")
+		)
+		{
+			InteractionProgress.Instance.AddInteraction();
+		}
+
+		// NORMAL CHARACTERS DISAPPEAR
 		if (currentCharacter != null)
 		{
-			if (
-				!currentCharacterName.Contains("marc")
-)
-			{
-				InteractionProgress.Instance.AddInteraction();
-			}
 			currentCharacter.SetActive(false);
 		}
+
 		vnUI.SetActive(false);
 
 		playerMovement.canMove = true;

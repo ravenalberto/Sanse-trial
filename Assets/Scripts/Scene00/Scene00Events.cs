@@ -526,7 +526,7 @@ public class Scene00VN : MonoBehaviour
             return true;
 
 
-            return true;
+
         }
 
         else if (command == "[CHOICE_TRUTH]")
