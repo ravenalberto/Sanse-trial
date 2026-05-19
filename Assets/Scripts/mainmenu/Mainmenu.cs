@@ -39,6 +39,7 @@ public class Mainmenu : MonoBehaviour
     public Button saveLoadBackButton;
     public Button preferencesBackButton;
     public Button creditsBackButton;
+    public Button chapterSelectBackButton;
 
     [Header("Menu Screen Panels")]
     [Tooltip("The main container panel holding the Start, Load, Settings, and Quit buttons.")]
@@ -49,6 +50,12 @@ public class Mainmenu : MonoBehaviour
     public GameObject preferencesPanel;
     [Tooltip("The container panel holding the game credits.")]
     public GameObject creditsPanel;
+    [Tooltip("The container panel holding the chapter 1 to 5 buttons.")]
+    public GameObject chapterSelectPanel;
+
+    [Header("Chapter Select UI Components")]
+    [Tooltip("Drag the 5 Chapter Buttons here in order (Index 0 = Chapter 1, Index 4 = Chapter 5)")]
+    public Button[] chapterButtons;
 
     [Header("Save/Load Slot UI Components")]
     [Tooltip("These slot buttons must be nested inside the Save/Load Panel.")]
@@ -88,7 +95,7 @@ public class Mainmenu : MonoBehaviour
     private void BindMenuButtons()
     {
         // Main menu navigation buttons
-        if (playButton != null) playButton.onClick.AddListener(OnNewGameClicked);
+        if (playButton != null) playButton.onClick.AddListener(OpenChapterSelectPanel);
         if (loadButton != null) loadButton.onClick.AddListener(OpenLoadPanel);
         if (preferencesButton != null) preferencesButton.onClick.AddListener(OpenPreferencesPanel);
         if (creditsButton != null) creditsButton.onClick.AddListener(OpenCreditsPanel);
@@ -98,6 +105,17 @@ public class Mainmenu : MonoBehaviour
         if (saveLoadBackButton != null) saveLoadBackButton.onClick.AddListener(ShowMainMenuOnly);
         if (preferencesBackButton != null) preferencesBackButton.onClick.AddListener(ShowMainMenuOnly);
         if (creditsBackButton != null) creditsBackButton.onClick.AddListener(ShowMainMenuOnly);
+        if (chapterSelectBackButton != null) chapterSelectBackButton.onClick.AddListener(ShowMainMenuOnly);
+
+        // Dynamic Chapter Select Button Click Actions
+        for (int i = 0; i < chapterButtons.Length; i++)
+        {
+            int chapterIndex = i + 1; // 1-based index (Chapter 1 to 5)
+            if (chapterButtons[i] != null)
+            {
+                chapterButtons[i].onClick.AddListener(() => OnChapterButtonClicked(chapterIndex));
+            }
+        }
     }
 
     // ==========================================
@@ -165,6 +183,16 @@ public class Mainmenu : MonoBehaviour
     }
 
     /// <summary>
+    /// Opens the Chapter Selection Panel and evaluates lock/unlock states.
+    /// </summary>
+    public void OpenChapterSelectPanel()
+    {
+        DeactivateAllSubPanels();
+        if (chapterSelectPanel != null) chapterSelectPanel.SetActive(true);
+        UpdateChapterButtonsState();
+    }
+
+    /// <summary>
     /// Strictly deactivates all panels to prevent overlapping elements, buttons, and sliders.
     /// </summary>
     private void DeactivateAllSubPanels()
@@ -174,6 +202,85 @@ public class Mainmenu : MonoBehaviour
         if (saveLoadPanel != null) saveLoadPanel.SetActive(false);
         if (preferencesPanel != null) preferencesPanel.SetActive(false);
         if (creditsPanel != null) creditsPanel.SetActive(false);
+        if (chapterSelectPanel != null) chapterSelectPanel.SetActive(false);
+    }
+
+    // ==========================================
+    // PROGRESSION & CHAPTER LAUNCH LOGIC
+    // ==========================================
+
+    /// <summary>
+    /// Refreshes the interactable state of the 5 Chapter Buttons.
+    /// </summary>
+    private void UpdateChapterButtonsState()
+    {
+        // Chapter 1 is always unlocked by default
+        if (chapterButtons.Length > 0 && chapterButtons[0] != null)
+        {
+            chapterButtons[0].interactable = true;
+        }
+
+        // Chapters 2 through 5 check PlayerPrefs to see if they've been visited
+        for (int i = 1; i < chapterButtons.Length; i++)
+        {
+            if (chapterButtons[i] != null)
+            {
+                string prefKey = "Unlocked_Chapter_" + (i + 1);
+                bool isUnlocked = PlayerPrefs.GetInt(prefKey, 0) == 1;
+                chapterButtons[i].interactable = isUnlocked;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Handles what happens when a player selects an unlocked Chapter.
+    /// </summary>
+    public void OnChapterButtonClicked(int chapterNum)
+    {
+        if (chapterNum == 1)
+        {
+            // Starting from Chapter 1 represents starting a fresh story run
+            OnNewGameClicked();
+        }
+        else
+        {
+            // Set basic progress variables for skipping logic/story structures
+            PlayerPrefs.SetInt("CameFromPacman", 0);
+            PlayerPrefs.SetInt("CameFromBlockPuzzle", 0);
+            PlayerPrefs.Save();
+
+            // Load the corresponding chapter scene
+            string sceneName = GetSceneNameForChapter(chapterNum);
+            SceneManager.LoadScene(sceneName);
+            Debug.Log($"<color=cyan>Chapter Select:</color> Jumping to Chapter {chapterNum} ({sceneName})");
+        }
+    }
+
+    /// <summary>
+    /// Maps our game chapter index to the scene name.
+    /// </summary>
+    private string GetSceneNameForChapter(int chapterNum)
+    {
+        switch (chapterNum)
+        {
+            case 1: return "Scene00";
+            case 2: return "Scene01";
+            case 3: return "Scene02";
+            case 4: return "Scene04";
+            case 5: return "Scene06";
+            default: return "Scene00";
+        }
+    }
+
+    /// <summary>
+    /// Global helper to unlock chapters from narrative files (Scene00VN, Scene01, etc.).
+    /// Call this via: Mainmenu.UnlockChapter(2); when advancing.
+    /// </summary>
+    public static void UnlockChapter(int chapterNum)
+    {
+        PlayerPrefs.SetInt("Unlocked_Chapter_" + chapterNum, 1);
+        PlayerPrefs.Save();
+        Debug.Log($"<color=green>Progression System:</color> Chapter {chapterNum} is now globally unlocked!");
     }
 
     // ==========================================
@@ -182,7 +289,7 @@ public class Mainmenu : MonoBehaviour
 
     public void OnNewGameClicked()
     {
-        // Reset dynamic transition and chapter flags
+        // Reset dynamic transition and chapter flags for this specific session
         PlayerPrefs.SetInt("CameFromPacman", 0);
         PlayerPrefs.SetInt("CameFromBlockPuzzle", 0);
 

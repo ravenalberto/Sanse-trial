@@ -47,6 +47,6 @@ public class MemoryManager : MonoBehaviour
 
 		yield return new WaitForSeconds(0.5f);
 
-		SceneManager.LoadScene("StaircaseScene01");
+		SceneManager.LoadScene("Scene02");
 	}
 }

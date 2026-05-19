@@ -89,7 +89,9 @@ public class Scene00VN : MonoBehaviour
     public GameObject BGTransitionPanel; // For fade effect
     public GameObject FadeOutBG;
 
-
+    [Header("Pause & HUD UI References")]
+    [Tooltip("Drag your top-right HUD Play/Pause Button GameObject here.")]
+    public GameObject hudPauseButtonObject;
 
 
 
@@ -278,6 +280,12 @@ public class Scene00VN : MonoBehaviour
     // =========================
     public void OnNextClick()
     {
+
+        // 3. BLOCK CLICKING IF PAUSED OR CHOOSING
+        if (PauseMenu.IsPaused) return;
+        if (foodChoicePanel.activeSelf || dialogueChoicePanel.activeSelf) return;
+
+
         if (isTyping)
         {
             StopCoroutine(typingCoroutine);
@@ -295,6 +303,17 @@ public class Scene00VN : MonoBehaviour
 
     void Update()
     {
+
+        // 1. BLOCK SKIPPING IF PAUSED
+        if (PauseMenu.IsPaused) return;
+
+        // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
+        if (hudPauseButtonObject != null)
+        {
+            bool isChoiceActive = foodChoicePanel.activeSelf || dialogueChoicePanel.activeSelf;
+            hudPauseButtonObject.SetActive(!isChoiceActive);
+        }
+
         skipMode = Input.GetKey(KeyCode.LeftControl);
 
         if (skipMode && !isTyping)
