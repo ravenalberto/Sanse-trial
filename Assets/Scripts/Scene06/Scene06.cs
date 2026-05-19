@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro;
+using TMP_Text = TMPro.TMP_Text;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -35,6 +35,7 @@ public class Scene06 : MonoBehaviour
     public TMP_Text dialogueText;
     public GameObject nextButton;
     public GameObject choicePanelApproach; // Choice panel for Marc's approach style
+    public GameObject choicePanelWhy;      // Choice panel for "So why didn't you do anything?" on Rooftop
     public CanvasGroup fadeCanvasGroup;
 
     [Header("Backgrounds")]
@@ -43,12 +44,18 @@ public class Scene06 : MonoBehaviour
     public GameObject highSchoolClassroomBG;
     public GameObject blackBG;
     public GameObject SchoolBG;
+    public GameObject rooftopBG;           // Sunset rooftop background
 
-    [Header("Portraits")]
+    [Header("SHS Portraits")]
     public GameObject marcNeutral;
     public GameObject marcLaugh;
     public GameObject marcChide;
     public GameObject highschoolCristel; // Using SHS Cristel portrait
+
+    [Header("College Portraits")]
+    public GameObject collegeMarcNeutral;
+    public GameObject collegeMarcLaugh;
+    public GameObject collegeMarcChide;
 
     [Header("Audio")]
     public AudioSource sfxSource;
@@ -58,40 +65,126 @@ public class Scene06 : MonoBehaviour
     public AudioClip bgFadeSFX;
     public AudioClip tearSniffleSFX;
 
+    // Structure to hold default portrait state for crisp coordinate restoration
+    private struct PortraitLayoutState
+    {
+        public Vector2 anchorMin;
+        public Vector2 anchorMax;
+        public Vector2 pivot;
+        public Vector2 anchoredPosition;
+        public Vector3 localScale;
+    }
+
+    private Dictionary<GameObject, PortraitLayoutState> originalMarcLayouts = new Dictionary<GameObject, PortraitLayoutState>();
+
     void Start()
     {
+        // Force unlock mouse cursor
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+
         // Start scene at the high school canteen flashback
-        if (highSchoolCanteenBG != null)
+        if (SchoolBG != null)
         {
-            currentBG = highSchoolCanteenBG;
-            highSchoolCanteenBG.SetActive(true);
+            currentBG = SchoolBG;
+            SchoolBG.SetActive(true);
         }
 
+        // Safe UI resets
         if (textBox != null) textBox.SetActive(false);
         if (choicePanelApproach != null) choicePanelApproach.SetActive(false);
+        if (choicePanelWhy != null) choicePanelWhy.SetActive(false);
         if (fadeCanvasGroup != null) fadeCanvasGroup.alpha = 0;
+
+        // Cache original layouts of Marc's portraits for fourth-wall warping
+        CacheMarcLayouts();
 
         EnqueueScene06();
         ShowNextLine();
     }
 
+    private void CacheMarcLayouts()
+    {
+        GameObject[] marcPortraits = { marcNeutral, marcLaugh, marcChide, collegeMarcNeutral, collegeMarcLaugh, collegeMarcChide };
+        foreach (var portrait in marcPortraits)
+        {
+            if (portrait != null)
+            {
+                RectTransform rect = portrait.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    PortraitLayoutState state = new PortraitLayoutState
+                    {
+                        anchorMin = rect.anchorMin,
+                        anchorMax = rect.anchorMax,
+                        pivot = rect.pivot,
+                        anchoredPosition = rect.anchoredPosition,
+                        localScale = rect.localScale
+                    };
+                    originalMarcLayouts[portrait] = state;
+                }
+            }
+        }
+    }
+
+    private void SetMarcToCenter(bool isCenter)
+    {
+        GameObject[] marcPortraits = { marcNeutral, marcLaugh, marcChide, collegeMarcNeutral, collegeMarcLaugh, collegeMarcChide };
+        foreach (var portrait in marcPortraits)
+        {
+            if (portrait != null)
+            {
+                RectTransform rect = portrait.GetComponent<RectTransform>();
+                if (rect != null)
+                {
+                    if (isCenter)
+                    {
+                        // Break the fourth wall: Force Marc straight to screen center and scale him up
+                        rect.anchorMin = new Vector2(0.5f, 0.5f);
+                        rect.anchorMax = new Vector2(0.5f, 0.5f);
+                        rect.pivot = new Vector2(0.5f, 0.5f);
+                        rect.anchoredPosition = new Vector2(0f, -80f); // Positioned slightly down to keep gaze leveled
+                        rect.localScale = new Vector3(1.35f, 1.35f, 1f); // Intimidating/Intimate zoom
+                    }
+                    else
+                    {
+                        // Restore native inspector configuration layout
+                        if (originalMarcLayouts.TryGetValue(portrait, out PortraitLayoutState defaultLayout))
+                        {
+                            rect.anchorMin = defaultLayout.anchorMin;
+                            rect.anchorMax = defaultLayout.anchorMax;
+                            rect.pivot = defaultLayout.pivot;
+                            rect.anchoredPosition = defaultLayout.anchoredPosition;
+                            rect.localScale = defaultLayout.localScale;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     void Update()
     {
         skipMode = Input.GetKey(KeyCode.LeftControl);
-        if (skipMode && !isTyping && !choicePanelApproach.activeSelf) ShowNextLine();
+
+        bool isAnyChoiceActive = (choicePanelApproach != null && choicePanelApproach.activeSelf) ||
+                                 (choicePanelWhy != null && choicePanelWhy.activeSelf);
+
+        if (skipMode && !isTyping && !isAnyChoiceActive) ShowNextLine();
     }
 
     void EnqueueScene06()
     {
         // --- ACT I: THE TOMBOY MORENA GIRL ---
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_SCHOOL]"));
         dialogueQueue.Enqueue(new DialogueLine("", "..."));
         dialogueQueue.Enqueue(new DialogueLine("", "I was just minding my own business back then..."));
         dialogueQueue.Enqueue(new DialogueLine("", "But his eyes always drifted towards a specific short-haired, tomboy morena girl who walked around with a certain maangas vibe."));
 
-        dialogueQueue.Enqueue(new DialogueLine("", "Napapansin ko, she walked behind them a lot. Parang laging buntot sa sarili niyang grupo..." ));
+        dialogueQueue.Enqueue(new DialogueLine("", "Napapansin ko, she walked behind them a lot. Parang laging buntot sa sarili niyang grupo..."));
         dialogueQueue.Enqueue(new DialogueLine("", "He occasionally saw her sitting alone or quietly watching people in the school canteen."));
-        dialogueQueue.Enqueue(new DialogueLine("", "Maybe I had a small crush on her. Who wouldn't? Kaso... I already knew my other friends liked her too. Kaya nanahimik na lang ako." ));
+        dialogueQueue.Enqueue(new DialogueLine("", "Maybe I had a small crush on her. Who wouldn't? Kaso... I already knew my other friends liked her too. Kaya nanahimik na lang ako."));
 
         // --- ACT II: AFTER THE BELL RINGS ---
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_BELL]"));
@@ -112,36 +205,69 @@ public class Scene06 : MonoBehaviour
 
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Uy! Ano nangyari baks? Okay ka lang?", marcNeutral));
         dialogueQueue.Enqueue(new DialogueLine("", "The girl blinks, startled by his sudden shift in tone, and suddenly lets out a small laugh.", highschoolCristel));
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Ahaha, oo... okay lang ako.", highschoolCristel));
+        dialogueQueue.Enqueue(new DialogueLine("", "Ahaha, oo... okay lang ako.", highschoolCristel));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Alam mo? Isa ka sa nakilala kong pinaka magaling magsinungaling.", marcChide));
+        dialogueQueue.Enqueue(new DialogueLine("", "The girl snorts."));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Ah so may kilala ka pang iba?", highschoolCristel));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Depende, ano ba pangalan mo?", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "...Cristel", highschoolCristel));
 
+        // --- ACT III: ROOFTOP TRUTH (FOURTH WALL BREAK) ---
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_ROOFTOP]"));
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[MARC_CENTER]")); // Position Marc directly facing the player
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
+
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Yeah so that’s actually what happened.", collegeMarcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "It’s that easy, she was bullied, depressed and suicidal. I knew it all along. And I admit to being responsible. But as well as others.", collegeMarcChide));
+
+        // Choice 10: "So why didn't you do anything?"
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_WHY]"));
+
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "What was I supposed to do? She pushed me away.", collegeMarcChide));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Enough of this. She’s gone but none of them know, because they couldn’t accept it.", collegeMarcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "Now, it’s up to you to decide to how to end this.", collegeMarcNeutral));
+
+        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[MARC_NORMAL]")); // Restore Marc's layout state before leaving
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_MARC_TEST]"));
     }
 
     public void OnApproachSelected(int index)
     {
-        choicePanelApproach.SetActive(false);
+        if (choicePanelApproach != null) choicePanelApproach.SetActive(false);
         usingTempQueue = true;
         tempQueue.Clear();
 
         if (index == 0) // Choice 9A: Playful / Gay Persona Approach
         {
             AddTrust("Cristel", 15);
-            
+            tempQueue.Enqueue(new DialogueLine("Marc", "Hi bonita, di ka pa nauwi girl?", marcLaugh));
             tempQueue.Enqueue(new DialogueLine("", "He pretended to sound gay, pitching his voice up slightly. He figured it was the best way to make her feel comfortable."));
         }
         else // Choice 9B: Gentle / Direct Approach
         {
             AddTrust("Cristel", 10);
-            
+            tempQueue.Enqueue(new DialogueLine("Marc", "Hey... okay ka lang? Bakit andito ka pa?", marcNeutral));
             tempQueue.Enqueue(new DialogueLine("", "He spoke softly, hoping his sudden presence wouldn't startle her away."));
         }
 
         ShowNextLine();
     }
 
+    public void OnWhySelected()
+    {
+        if (choicePanelWhy != null) choicePanelWhy.SetActive(false);
+        ShowNextLine();
+    }
+
     public void OnNextClick()
     {
+        bool isAnyChoiceActive = (choicePanelApproach != null && choicePanelApproach.activeSelf) ||
+                                 (choicePanelWhy != null && choicePanelWhy.activeSelf);
+
+        if (isAnyChoiceActive) return; // Block skip input when choosing
+
         if (isTyping)
         {
             StopCoroutine(typingCoroutine);
@@ -156,6 +282,11 @@ public class Scene06 : MonoBehaviour
     void ShowNextLine()
     {
         if (dialogueQueue.Count == 0 && tempQueue.Count == 0) return;
+
+        bool isAnyChoiceActive = (choicePanelApproach != null && choicePanelApproach.activeSelf) ||
+                                 (choicePanelWhy != null && choicePanelWhy.activeSelf);
+
+        if (isAnyChoiceActive) return; // Pause processing queue
 
         DialogueLine line;
         if (usingTempQueue && tempQueue.Count > 0)
@@ -190,8 +321,12 @@ public class Scene06 : MonoBehaviour
         switch (command)
         {
             case "[CHOICE_APPROACH]":
-                choicePanelApproach.SetActive(true);
-                nextButton.SetActive(false);
+                if (choicePanelApproach != null) choicePanelApproach.SetActive(true);
+                if (nextButton != null) nextButton.SetActive(false);
+                return true;
+            case "[CHOICE_WHY]":
+                if (choicePanelWhy != null) choicePanelWhy.SetActive(true);
+                if (nextButton != null) nextButton.SetActive(false);
                 return true;
             case "[SFX_BELL]":
                 if (sfxSource && bellSFX) sfxSource.PlayOneShot(bellSFX);
@@ -202,16 +337,23 @@ public class Scene06 : MonoBehaviour
             case "[SFX_GLITCH]":
                 if (sfxSource && glitchSFX) sfxSource.PlayOneShot(glitchSFX);
                 return false;
+            case "[MARC_CENTER]":
+                SetMarcToCenter(true);
+                return false;
+            case "[MARC_NORMAL]":
+                SetMarcToCenter(false);
+                return false;
             case "[FADE_OUT]":
                 StartFade(1.0f);
                 return true;
             case "[FADE_IN]":
-                StartFade(0.0f);
+                StartFade(0.2f);
                 return true;
             case "[BG_CANTEEN]": StartBGTransition(highSchoolCanteenBG); return false;
             case "[BG_CLASSROOM]": StartBGTransition(highSchoolClassroomBG); return false;
             case "[BG_BLACK]": StartBGTransition(blackBG); return false;
             case "[BG_SCHOOL]": StartBGTransition(SchoolBG); return false;
+            case "[BG_ROOFTOP]": StartBGTransition(rooftopBG); return false;
             case "[GOTO_MARC_TEST]":
                 SceneManager.LoadScene("Marc_TestScene");
                 return true;
@@ -290,7 +432,7 @@ public class Scene06 : MonoBehaviour
     IEnumerator TypeLine(string text)
     {
         isTyping = true;
-        nextButton.SetActive(false);
+        if (nextButton != null) nextButton.SetActive(false);
         dialogueText.text = "";
         foreach (char c in text)
         {
@@ -298,7 +440,7 @@ public class Scene06 : MonoBehaviour
             yield return new WaitForSeconds(skipMode ? 0.001f : textSpeed);
         }
         isTyping = false;
-        nextButton.SetActive(true);
+        if (nextButton != null) nextButton.SetActive(true);
     }
 
     void DisableAllBGs()
@@ -306,12 +448,14 @@ public class Scene06 : MonoBehaviour
         if (highSchoolCanteenBG) highSchoolCanteenBG.SetActive(false);
         if (highSchoolClassroomBG) highSchoolClassroomBG.SetActive(false);
         if (blackBG) blackBG.SetActive(false);
+        if (SchoolBG) SchoolBG.SetActive(false);
+        if (rooftopBG) rooftopBG.SetActive(false);
         currentBG = null;
     }
 
     void HideAllPortraits()
     {
-        GameObject[] ports = { marcNeutral, marcLaugh, marcChide, highschoolCristel };
+        GameObject[] ports = { marcNeutral, marcLaugh, marcChide, highschoolCristel, collegeMarcNeutral, collegeMarcLaugh, collegeMarcChide };
         foreach (var p in ports) if (p) p.SetActive(false);
     }
 }
