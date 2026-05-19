@@ -7,6 +7,10 @@ using UnityEngine.UI;
 
 public class Scene001 : MonoBehaviour
 {
+
+    private int currentLineIndex = 0; // Tracks dialogue progression
+
+
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
 
     public void AddTrust(string characterName, int amount)
@@ -38,6 +42,7 @@ public class Scene001 : MonoBehaviour
     public GameObject choicePanelMarc;    // Choice for answering Marc
     public GameObject choicePanelMarcReality; // Grouped here under UI Components for easy Inspector visibility!
     public CanvasGroup fadeCanvasGroup;
+    public GameObject hudPauseButtonObject;
 
     [Header("Backgrounds")]
     public GameObject currentBG;
@@ -81,6 +86,10 @@ public class Scene001 : MonoBehaviour
 
     void Start()
     {
+        if (PauseMenu.IsPaused) return;
+        if (choicePanelComfort.activeSelf || choicePanelMarc.activeSelf) return;
+
+
         // --- CURSOR RESCUE SYSTEM ---
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
@@ -283,6 +292,18 @@ public class Scene001 : MonoBehaviour
 
     void Update()
     {
+        textSpeed = PauseMenu.GetTextDelay();
+
+        // 1. BLOCK SKIPPING IF PAUSED
+        if (PauseMenu.IsPaused) return;
+
+        // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
+        if (hudPauseButtonObject != null)
+        {
+            bool isChoiceActive = choicePanelComfort.activeSelf || choicePanelMarc.activeSelf || choicePanelMarcReality.activeSelf;
+            hudPauseButtonObject.SetActive(!isChoiceActive);
+        }
+
         skipMode = Input.GetKey(KeyCode.LeftControl);
 
         // Safely check if any of our choice panels are currently blocking inputs

@@ -1,4 +1,4 @@
-using System.Collections;
+ï»¿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 public class Scene01 : MonoBehaviour
 {
+
+    private int currentLineIndex = 0;
+
     // Static state tracker to maintain progress across scene loads
     public static bool cameFromBlockPuzzle = false;
     private static string lastActiveScene = "";
@@ -30,7 +33,7 @@ public class Scene01 : MonoBehaviour
     }
 
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
-
+    
     public void AddTrust(string characterName, int amount)
     {
         if (!trustScores.ContainsKey(characterName)) trustScores[characterName] = 0;
@@ -55,6 +58,7 @@ public class Scene01 : MonoBehaviour
     public TMP_Text charNameText;
     public TMP_Text dialogueText;
     public GameObject nextButton;
+    public GameObject hudPauseButtonObject;
 
     [Header("Choice Panels")]
     public GameObject choicePanel;      // For Choice 5 (Gates)
@@ -126,21 +130,122 @@ public class Scene01 : MonoBehaviour
         if (fadeCanvasGroup != null) fadeCanvasGroup.alpha = 0;
 
         // Check if we are returning from the minigame
-        if (cameFromBlockPuzzle)
+        // --- ðŸ’¾ SAVE PROGRESS RESTORER ---
+        bool isRestoring = PlayerPrefs.HasKey("SavedLineIndex") && PlayerPrefs.GetString("SavedScene") == SceneManager.GetActiveScene().name;
+
+        if (isRestoring)
         {
-            cameFromBlockPuzzle = false; // reset
-            EnqueueScene01PostPuzzle();
+            // Restore the exact dialogue timeline branch (Pre-Puzzle or Post-Puzzle sequence)
+            bool loadPostPuzzle = PlayerPrefs.GetInt("Scene01_IsPostPuzzle", 0) == 1;
+            if (loadPostPuzzle)
+            {
+                Debug.Log("<color=green>Scene01 Restorer:</color> Restoring Post-Puzzle timeline branch.");
+                EnqueueScene01PostPuzzle();
+            }
+            else
+            {
+                Debug.Log("<color=green>Scene01 Restorer:</color> Restoring pre-puzzle main timeline branch.");
+                EnqueueScene01();
+            }
+
+            int targetIndex = PlayerPrefs.GetInt("SavedLineIndex", 0);
+
+            // Fast-forward (discard) lines from the queue until we reach the target line
+            int discardedCount = 0;
+            while (dialogueQueue.Count > 0 && discardedCount < targetIndex - 1)
+            {
+                DialogueLine line = dialogueQueue.Dequeue();
+
+                // --- INSTANT VISUAL CATCH-UP ---
+                // Set background instantly to prevent overlapping transition coroutines during skipped progress
+                if (line.speaker == "SYSTEM" && line.text.StartsWith("[BG_"))
+                {
+                    SetBGInstantByName(line.text);
+                }
+
+                // Register BGM changes that occurred during the skipped portion
+                if (line.speaker == "SYSTEM" && (line.text == "[SFX_ANGELUS]" || line.text == "[SFX_INTERCOM_START]"))
+                {
+                    PauseMenu.ActiveMusicTrackName = "Angelus";
+                }
+
+                discardedCount++;
+            }
+
+            currentLineIndex = discardedCount;
+
+            // --- RESTORE CORRECT BACKGROUND MUSIC TRACK ---
+            if (PlayerPrefs.HasKey("SavedMusicTrack"))
+            {
+                string savedMusic = PlayerPrefs.GetString("SavedMusicTrack");
+                RestoreMusicState(savedMusic);
+
+                // Sync current runtime BGM tracker
+                PauseMenu.ActiveMusicTrackName = savedMusic;
+            }
+
+            // Clean up skipping parameters so regular loads don't loop
+            PlayerPrefs.DeleteKey("SavedLineIndex");
+            PlayerPrefs.DeleteKey("SavedScene");
+            PlayerPrefs.DeleteKey("SavedMusicTrack");
+            PlayerPrefs.Save();
+
+            Debug.Log($"<color=green>Save restorer:</color> Skipped {discardedCount} lines. Visuals and Music Restored. Continuing at line {currentLineIndex + 1}.");
         }
         else
         {
-            EnqueueScene01();
+            // --- NORMAL GAMEFLOW ---
+            // Check if we are returning from the minigame
+            bool returningFromBlockPuzzle = cameFromBlockPuzzle || (PlayerPrefs.GetInt("CameFromBlockPuzzle", 0) == 1);
+
+            if (returningFromBlockPuzzle)
+            {
+                cameFromBlockPuzzle = false; // reset
+                PlayerPrefs.SetInt("CameFromBlockPuzzle", 0);
+
+                Debug.Log("<color=green>Scene01 System:</color> Retained state found. Loading Post-Puzzle sequence.");
+                EnqueueScene01PostPuzzle();
+                PlayerPrefs.SetInt("Scene01_IsPostPuzzle", 1);
+            }
+            else
+            {
+                Debug.Log("<color=white>Scene01 System:</color> Starting Scene 01 normally.");
+                EnqueueScene01();
+                PlayerPrefs.SetInt("Scene01_IsPostPuzzle", 0);
+            }
+            PlayerPrefs.Save();
+            currentLineIndex = 0; // Fresh scene start
+
+            // Start Default Scene Music
+            if (musicSource != null && angelusSFX != null)
+            {
+                musicSource.clip = angelusSFX;
+                musicSource.Play();
+                PauseMenu.ActiveMusicTrackName = "Angelus";
+            }
         }
 
         ShowNextLine();
     }
 
+
+
     void Update()
     {
+        // 1. BLOCK SKIPPING IF PAUSED
+        if (PauseMenu.IsPaused) return;
+
+
+        textSpeed = PauseMenu.GetTextDelay();
+
+
+        // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
+        if (hudPauseButtonObject != null)
+        {
+            bool isChoiceActive = choicePanel.activeSelf || choicePanel6.activeSelf;
+            hudPauseButtonObject.SetActive(!isChoiceActive);
+        }
+
         skipMode = Input.GetKey(KeyCode.LeftControl);
         if (skipMode && !isTyping && !choicePanel.activeSelf && !choicePanel6.activeSelf) ShowNextLine();
     }
@@ -149,12 +254,12 @@ public class Scene01 : MonoBehaviour
     {
         // --- ANGELUS START ---
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_ANGELUS]"));
-        dialogueQueue.Enqueue(new DialogueLine("Intercom", "Angelus Domini nuntiavit Mariae…"));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "…Ang late na.", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "…Pero ang aga naman for prayer?", kuhNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Intercom", "…et concepit de Spiritu—"));
+        dialogueQueue.Enqueue(new DialogueLine("Intercom", "Angelus Domini nuntiavit Mariaeâ€¦"));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "â€¦Ang late na.", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "â€¦Pero ang aga naman for prayer?", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Intercom", "â€¦et concepit de Spirituâ€”"));
         dialogueQueue.Enqueue(new DialogueLine("Intercom", "Students."));
-        dialogueQueue.Enqueue(new DialogueLine("Intercom", "…5:17 PM."));
+        dialogueQueue.Enqueue(new DialogueLine("Intercom", "â€¦5:17 PM."));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_GATES]"));
@@ -168,14 +273,14 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("Raven", "Yo cristel?", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("", "She calls again this time, she was closer. Cristel jumps."));
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "Oh! I didn't see you there!", cristelSmile));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "No worries im on my way anyways–", ravenNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "No worries im on my way anywaysâ€“", ravenNeutral));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_GLITCH]"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SHOW_GC]"));
-        dialogueQueue.Enqueue(new DialogueLine("GC", "“Guys asan na yung iba?”\n“Andito na si sir oh.”"));
+        dialogueQueue.Enqueue(new DialogueLine("GC", "â€œGuys asan na yung iba?â€\nâ€œAndito na si sir oh.â€"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[HIDE_GC]"));
 
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "“Crap, they’re looking for us. Should we go?”", ravenNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "â€œCrap, theyâ€™re looking for us. Should we go?â€", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "Its fine, mauna kana muna. Sunod ako.", cristelSmile));
         dialogueQueue.Enqueue(new DialogueLine("", "Cristel smiles. But Raven notices something strange. Not sadness. Not fear. Delay."));
         dialogueQueue.Enqueue(new DialogueLine("", "Like Cristel has to remember how to react first."));
@@ -186,7 +291,7 @@ public class Scene01 : MonoBehaviour
 
         dialogueQueue.Enqueue(new DialogueLine("Raven", "Sunod ka nalang.", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "Sige ven. Mamaya nalang", cristelSmile));
-        dialogueQueue.Enqueue(new DialogueLine("", "She smiles, but it doesn’t feel real. Raven shakes it off and heads to class."));
+        dialogueQueue.Enqueue(new DialogueLine("", "She smiles, but it doesnâ€™t feel real. Raven shakes it off and heads to class."));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_HALLWAY]"));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Uy ven, san na si tetel?", kuhNeutral));
@@ -199,7 +304,7 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
 
         // --- CLASSROOM SECTION ---
-        dialogueQueue.Enqueue(new DialogueLine("", "Cristel wasn’t acting alright. It’s currently 5:16pm and many of our classmates are already heading home."));
+        dialogueQueue.Enqueue(new DialogueLine("", "Cristel wasnâ€™t acting alright. Itâ€™s currently 5:16pm and many of our classmates are already heading home."));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Do you think we should check on her?", darleneNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Baka need nya muna mapag isa..?", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Wag na, yaan nyo nayan wala na yang pake satin.", marcNeutral));
@@ -207,29 +312,29 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("", "Raven shakes her head and decides to focus on finishing up the document."));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_GLITCH]"));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "Finally. That felt like days! I’m finally done."));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "What’s that? Did you say something?", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "Finally. That felt like days! Iâ€™m finally done."));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Whatâ€™s that? Did you say something?", darleneNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Huh? Me? No?", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "I think we should go home.", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "What time is it? Cristel hasn’t gone back yet", kuhNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "Cristel hasn’t come back?", ravenNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "Hasn’t it been an hour already? 5:17 PM? Is the clock broken?"));
-        dialogueQueue.Enqueue(new DialogueLine("", "She finished an entire document. That should’ve taken at least an hour."));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "What time is it? Cristel hasnâ€™t gone back yet", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "Cristel hasnâ€™t come back?", ravenNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "Hasnâ€™t it been an hour already? 5:17 PM? Is the clock broken?"));
+        dialogueQueue.Enqueue(new DialogueLine("", "She finished an entire document. That shouldâ€™ve taken at least an hour."));
 
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "I’ll go see Cristel.", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Iâ€™ll go see Cristel.", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("", "Marc sat silently playing a gambling game on the pc. Darlene sighs."));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuya talaga. Puntahan muna namin si Cristel ah.", darleneNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Sige, baka mabawi pa yung kulam nya satin.", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Need lang naman natin sya intindihin Kuya–", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "“Oh talaga? So tayo nalang lagi iintindi sa kanya? Pano tayo? Pano ako? Lagi nalang ganyan?”", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "“Kuya naman please…”", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "“Ayaw mo maniwala sakin kausapin mo sya–”", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Need lang naman natin sya intindihin Kuyaâ€“", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "â€œOh talaga? So tayo nalang lagi iintindi sa kanya? Pano tayo? Pano ako? Lagi nalang ganyan?â€", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "â€œKuya naman pleaseâ€¦â€", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "â€œAyaw mo maniwala sakin kausapin mo syaâ€“â€", marcNeutral));
 
         dialogueQueue.Enqueue(new DialogueLine("", "(The door opens.)"));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "“Ano nanaman nangyayari dito jusko”", kuhNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Raven", "Why do i feel like… i’ve seen this before…", ravenNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "“Oh ayan speak of the devil, buti dumating pa yan”", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "“Bakit ano bang meron.”", cristelFrown));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "â€œAno nanaman nangyayari dito juskoâ€", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Raven", "Why do i feel likeâ€¦ iâ€™ve seen this beforeâ€¦", ravenNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "â€œOh ayan speak of the devil, buti dumating pa yanâ€", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "â€œBakit ano bang meron.â€", cristelFrown));
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
@@ -248,8 +353,8 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_IN]"));
 
         // --- STAIRCASE SUNSET ---
-        dialogueQueue.Enqueue(new DialogueLine("", "They shouldn’t be going. Impossible things are easier to dismiss until they keep happening."));
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Come on… it’s probably just another clue.", cristelNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("", "They shouldnâ€™t be going. Impossible things are easier to dismiss until they keep happening."));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Come onâ€¦ itâ€™s probably just another clue.", cristelNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Raven", "Since when do we follow instructions from a broken intercom?", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "We followed worse. You know? Like Cristel.", marcNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "Ano nanaman ba ginawa ko sayo?", cristelFrown));
@@ -257,7 +362,7 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Can we not joke right now?", darleneNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Sinong nagsabing nagjojoke ako?", marcNeutral));
 
-        dialogueQueue.Enqueue(new DialogueLine("Cristel", "It’s just another puzzle. Like earlier.", cristelNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Cristel", "Itâ€™s just another puzzle. Like earlier.", cristelNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Walang nagtanong sayo.", marcNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Raven", "I mean may point si cristel. Kita mo naman yung kanina.", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "So kampi ka na rin sa kanya. Nice. Kala ko panaman matino ka.", marcNeutral));
@@ -276,7 +381,7 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
         dialogueQueue.Enqueue(new DialogueLine("", "Click and drop the randomized block shapes onto the grid to complete full rows or columns, which blasts them off the board."));
         dialogueQueue.Enqueue(new DialogueLine("", "If the board fills up and none of your available block shapes can fit into the remaining open spaces,"));
-        dialogueQueue.Enqueue(new DialogueLine("", "it's an instant Game Over—even if there is still time left on the clock."));
+        dialogueQueue.Enqueue(new DialogueLine("", "it's an instant Game Overâ€”even if there is still time left on the clock."));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_MAZE]"));
     }
 
@@ -286,7 +391,7 @@ public class Scene01 : MonoBehaviour
         tempQueue.Clear();
 
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_STAIRCASE]"));
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "…Ano tapos kana?", marcNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Marc", "â€¦Ano tapos kana?", marcNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Raven", "Ako?", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "hinde joke lang pala, gusto mo party hat?", marcLaugh));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Since ikaw unang nakapansin..", darleneNeutral));
@@ -297,10 +402,10 @@ public class Scene01 : MonoBehaviour
 
         dialogueQueue.Enqueue(new DialogueLine("", "No one else replied."));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_INTERCOM_START]"));
-        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "Angelus Domini nuntiavit Mariae…"));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "…Again?", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "Angelus Domini nuntiavit Mariaeâ€¦"));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "â€¦Again?", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_STATIC_CUT]"));
-        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "…Proceed."));
+        dialogueQueue.Enqueue(new DialogueLine("INTERCOM", "â€¦Proceed."));
 
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Ang bossy naman ng prayer na to.", marcNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuya..", darleneNeutral));
@@ -308,7 +413,7 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("", "Suddenly, Kuh stops on her tracks."));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Guys naririnig nyo ba yon?", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Hinde, naiwan ko vape ko eh wala ako sa sarili ko.", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Hindi– parang–", kuhNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Kuh", "Hindiâ€“ parangâ€“", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Parang..?", darleneNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Si Cristel ba yon?!?!", kuhNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "ha? Andito ako!", cristelNeutral));
@@ -317,7 +422,7 @@ public class Scene01 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("", "But before anything else, Kuh was already running up ahead."));
 
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh?", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh wait–", darleneSad));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuh waitâ€“", darleneSad));
         dialogueQueue.Enqueue(new DialogueLine("Raven", "What the helly?", ravenNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Marc", "ven tignan mo tong pader may swastika", marcNeutral));
 
@@ -332,8 +437,8 @@ public class Scene01 : MonoBehaviour
             glitchedClickCount++;
             if (sfxSource != null && glitchSFX != null) sfxSource.PlayOneShot(glitchSFX);
 
-            if (glitchedClickCount == 1) dialogueText.text = "HUh? Why can’t I click it?";
-            else if (glitchedClickCount == 2) dialogueText.text = "…No.";
+            if (glitchedClickCount == 1) dialogueText.text = "HUh? Why canâ€™t I click it?";
+            else if (glitchedClickCount == 2) dialogueText.text = "â€¦No.";
             else if (glitchedClickCount >= 3) dialogueText.text = "Why am I allowed to?";
 
             return;
@@ -366,12 +471,12 @@ public class Scene01 : MonoBehaviour
             case 2: // Choice 6C
                 AddTrust("Marc", 10);
                 TriggerNotification(notification6C);
-                tempQueue.Enqueue(new DialogueLine("Marc", "…Sana makita nyo rin yung perspective ko kung ganyan.", marcNeutral));
+                tempQueue.Enqueue(new DialogueLine("Marc", "â€¦Sana makita nyo rin yung perspective ko kung ganyan.", marcNeutral));
                 break;
             case 3: // Choice 6D
                 AddTrust("Marc", 15);
                 TriggerNotification(notification6D);
-                tempQueue.Enqueue(new DialogueLine("Marc", "…I agree.", marcNeutral));
+                tempQueue.Enqueue(new DialogueLine("Marc", "â€¦I agree.", marcNeutral));
                 break;
         }
 
@@ -397,6 +502,9 @@ public class Scene01 : MonoBehaviour
 
     public void OnNextClick()
     {
+        if (PauseMenu.IsPaused) return;
+        if (choicePanel.activeSelf || choicePanel6.activeSelf) return;
+
         if (isTyping)
         {
             StopCoroutine(typingCoroutine);
@@ -467,7 +575,12 @@ public class Scene01 : MonoBehaviour
                 nextButton.SetActive(false);
                 return true;
             case "[SFX_ANGELUS]":
-                if (musicSource != null && angelusSFX != null) musicSource.PlayOneShot(angelusSFX);
+                if (musicSource != null && angelusSFX != null)
+                {
+                    musicSource.PlayOneShot(angelusSFX);
+                    // --- TRACK ACTIVE BGM STATE ---
+                    PauseMenu.ActiveMusicTrackName = "Angelus";
+                }
                 return false;
             case "[SFX_GLITCH]":
                 if (sfxSource != null && glitchSFX != null) sfxSource.PlayOneShot(glitchSFX);
@@ -477,8 +590,13 @@ public class Scene01 : MonoBehaviour
                 return false;
             case "[SFX_INTERCOM_START]":
                 if (sfxSource != null && staticCrackleSFX != null) sfxSource.PlayOneShot(staticCrackleSFX);
-                if (musicSource != null && angelusSFX != null) musicSource.PlayOneShot(angelusSFX);
-                return false;
+                if (musicSource != null && angelusSFX != null)
+                {
+                    musicSource.PlayOneShot(angelusSFX);
+                    // --- TRACK ACTIVE BGM STATE ---
+                    PauseMenu.ActiveMusicTrackName = "Angelus";
+                }
+                return false;   
             case "[SFX_STATIC_CUT]":
                 if (sfxSource != null && staticCutSFX != null) sfxSource.PlayOneShot(staticCutSFX);
                 return false;
@@ -614,6 +732,30 @@ public class Scene01 : MonoBehaviour
         currentBG = null;
     }
 
+    private void SetBGInstantByName(string bgCommand)
+    {
+        DisableAllBGs();
+        GameObject targetBG = null;
+
+        switch (bgCommand)
+        {
+            case "[BG_GATES]": targetBG = schoolGatesBG; break;
+            case "[BG_HALLWAY]": targetBG = hallwayBG; break;
+            case "[BG_CLASSROOM]": targetBG = classroomBG; break;
+            case "[BG_STAIRCASE]": targetBG = staircaseSunsetBG; break;
+            case "[BG_PHONE]": targetBG = phoneBG; break;
+            case "[BG_PHONEMESSAGE]": targetBG = phonemessageBG; break;
+        }
+
+        if (targetBG != null)
+        {
+            targetBG.SetActive(true);
+            CanvasGroup cg = targetBG.GetComponent<CanvasGroup>();
+            if (cg != null) cg.alpha = 1f;
+            currentBG = targetBG;
+        }
+    }
+
     void HideAllPortraits()
     {
         if (cristelNeutral) cristelNeutral.SetActive(false); if (cristelFrown) cristelFrown.SetActive(false); if (cristelSmile) cristelSmile.SetActive(false);
@@ -621,4 +763,31 @@ public class Scene01 : MonoBehaviour
         if (kuhNeutral) kuhNeutral.SetActive(false); if (ravenNeutral) ravenNeutral.SetActive(false);
         if (darleneNeutral) darleneNeutral.SetActive(false); if (darleneSad) darleneSad.SetActive(false);
     }
+    private void RestoreMusicState(string trackID)
+    {
+        if (musicSource == null) return;
+
+        AudioClip targetClip = null;
+
+        switch (trackID)
+        {
+            case "Angelus":
+                targetClip = angelusSFX;
+                break;
+            case "Bell":
+                targetClip = bellSFX;
+                break;
+            default:
+                Debug.LogWarning($"Music Restorer: Track ID '{trackID}' is not mapped inside Scene 01.");
+                break;
+        }
+
+        if (targetClip != null)
+        {
+            musicSource.clip = targetClip;
+            musicSource.Play();
+            Debug.Log($"<color=cyan>Music Restorer:</color> Successfully restored active BGM track: <b>{trackID}</b>");
+        }
+    }
+
 }

@@ -5,8 +5,14 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+
+
+
 public class Scene00VN : MonoBehaviour
 {
+
+    private int currentLineIndex = 0; // Tracks dialogue progression
+
 
     public static bool isKuhOutsideSlots = false;
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
@@ -126,6 +132,44 @@ public class Scene00VN : MonoBehaviour
         schoolBG.SetActive(true);
 
         EnqueueDialogue();
+        // --- SAVE PROGRESS RESTORER ---
+        // Checks if the player loaded a save file corresponding to this exact scene
+        // --- SAVE PROGRESS RESTORER ---
+        if (PlayerPrefs.HasKey("SavedLineIndex") && PlayerPrefs.GetString("SavedScene") == UnityEngine.SceneManagement.SceneManager.GetActiveScene().name)
+        {
+            int targetIndex = PlayerPrefs.GetInt("SavedLineIndex", 0);
+
+            // Fast-forward (discard) lines from the queue until we reach the target line
+            int discardedCount = 0;
+            while (dialogueQueue.Count > 0 && discardedCount < targetIndex - 1)
+            {
+                DialogueLine line = dialogueQueue.Dequeue();
+
+                // --- THE VISUAL RESTORATION FIX ---
+                // If we skip past a background change command, run it instantly so the visuals catch up!
+                if (line.speaker == "SYSTEM" && line.text.StartsWith("[BG_"))
+                {
+                    HandleSystemCommand(line.text);
+                }
+
+                discardedCount++;
+            }
+
+            // Set the active tracker index to match our loaded checkpoint
+            currentLineIndex = discardedCount;
+
+            // Clean up PlayerPrefs trackers so regular reloads don't loop
+            PlayerPrefs.DeleteKey("SavedLineIndex");
+            PlayerPrefs.DeleteKey("SavedScene");
+            PlayerPrefs.Save();
+
+            Debug.Log($"<color=green>Save restorer:</color> Skipped {discardedCount} lines. Backgrounds restored. Continuing at line {currentLineIndex + 1}.");
+        }
+        else
+        {
+            currentLineIndex = 0; // Fresh scene start
+        }
+
         ShowNextLine();
     }
 
@@ -280,8 +324,6 @@ public class Scene00VN : MonoBehaviour
     // =========================
     public void OnNextClick()
     {
-
-        // 3. BLOCK CLICKING IF PAUSED OR CHOOSING
         if (PauseMenu.IsPaused) return;
         if (foodChoicePanel.activeSelf || dialogueChoicePanel.activeSelf) return;
 
@@ -305,6 +347,8 @@ public class Scene00VN : MonoBehaviour
     {
 
         // 1. BLOCK SKIPPING IF PAUSED
+
+        textSpeed = PauseMenu.GetTextDelay();
         if (PauseMenu.IsPaused) return;
 
         // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
@@ -362,11 +406,10 @@ public class Scene00VN : MonoBehaviour
         {
             line = tempQueue.Dequeue();
 
-            if (tempQueue.Count == 0 &&
-                !(line.speaker == "SYSTEM"))
+            if (tempQueue.Count == 0 && !(line.speaker == "SYSTEM"))
             {
                 usingTempQueue = false;
-            }// go back to main queue after
+            } // go back to main queue after
         }
         else
         {
@@ -386,6 +429,12 @@ public class Scene00VN : MonoBehaviour
             return;
         }
 
+        // --- 💾 SYNCHRONIZE ACTIVE DIALOGUE TRACKERS FOR THE PAUSE SYSTEM ---
+        // This tracks which line we are on for saving, and takes a text preview for the slot labels!
+        currentLineIndex++;
+        PauseMenu.ActiveLineIndex = currentLineIndex;
+        PauseMenu.ActiveDialogueText = line.text;
+
         // 🎭 PORTRAITS
         HideAllPortraits();
         if (line.portrait != null)
@@ -398,12 +447,10 @@ public class Scene00VN : MonoBehaviour
             StopCoroutine(typingCoroutine);
         }
 
+        // Runs your existing coroutine exactly as it is (no parameter changes!)
         typingCoroutine = StartCoroutine(TypeLine(line));
     }
 
-    // Helper used to process a single line (used by ShowNextLine and by OnNotebookClicked
-    // to robustly continue from tempQueue). Keeps behavior identical to ShowNextLine's
-    // processing after a dequeue.
     void ProcessLine(DialogueLine line)
     {
         if (line == null)

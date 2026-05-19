@@ -5,8 +5,12 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+
 public class Scene04VN : MonoBehaviour
 {
+
+    private int currentLineIndex = 0; // Tracks dialogue progression
+
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
 
     public void AddTrust(string characterName, int amount)
@@ -32,6 +36,7 @@ public class Scene04VN : MonoBehaviour
     public TMP_Text dialogueText;
     public GameObject nextButton;
     public GameObject choicePanel;
+    public GameObject hudPauseButtonObject;
 
     [Header("Notification UI Design")]
     [Tooltip("Design for Choice A: Cristel will appreciate that")]
@@ -80,6 +85,18 @@ public class Scene04VN : MonoBehaviour
 
     void Update()
     {
+        textSpeed = PauseMenu.GetTextDelay();
+
+        // 1. BLOCK SKIPPING IF PAUSED
+        if (PauseMenu.IsPaused) return;
+
+        // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
+        if (hudPauseButtonObject != null)
+        {
+            bool isChoiceActive = choicePanel.activeSelf;
+            hudPauseButtonObject.SetActive(!isChoiceActive);
+        }
+
         skipMode = Input.GetKey(KeyCode.LeftControl);
         if (skipMode && !isTyping && !choicePanel.activeSelf) ShowNextLine();
     }
@@ -196,6 +213,11 @@ public class Scene04VN : MonoBehaviour
 
     public void OnNextClick()
     {
+
+        if (PauseMenu.IsPaused) return;
+        if (choicePanel.activeSelf) return;
+
+
         if (isTyping)
         {
             StopCoroutine(typingCoroutine);

@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 public class Scene02 : MonoBehaviour
 {
+
+    private int currentLineIndex = 0;
+
     // Static transition flag to allow PacmanGameManager to communicate directly with this scene
     public static bool CameFromPacman = false;
 
@@ -40,6 +43,8 @@ public class Scene02 : MonoBehaviour
     public GameObject choicePanelRaven; // For Choice 6
     public GameObject choicePanelJump;  // For the JUMP choice sequence
     public CanvasGroup fadeCanvasGroup;
+    public GameObject hudPauseButtonObject;
+
 
     [Header("Backgrounds")]
     public GameObject currentBG;
@@ -88,22 +93,86 @@ public class Scene02 : MonoBehaviour
 
         // --- RETRIEVE STATE SYSTEM (BOTH STATIC FIELD & PLAYERPREFS) ---
         // Reads either the direct static boolean or the win state saved in PlayerPrefs
-        bool returningFromPacman = CameFromPacman || (PlayerPrefs.GetInt("CameFromPacman", 0) == 1);
 
-        if (returningFromPacman)
+
+        bool isRestoring = PlayerPrefs.HasKey("SavedLineIndex") && PlayerPrefs.GetString("SavedScene") == SceneManager.GetActiveScene().name;
+
+        if (isRestoring)
         {
-            // Reset both keys immediately so reloads don't loop
-            CameFromPacman = false;
-            PlayerPrefs.SetInt("CameFromPacman", 0);
+            // Check persistent flag to determine which timeline queue was active when saving
+            bool loadRooftop = PlayerPrefs.GetInt("Scene02_IsRooftop", 0) == 1;
+            if (loadRooftop)
+            {
+                Debug.Log("<color=green>Scene02 Restorer:</color> Restoring Rooftop Continuation timeline.");
+                EnqueueScene02RooftopContinuation();
+            }
+            else
+            {
+                Debug.Log("<color=green>Scene02 Restorer:</color> Restoring Staircase normal start timeline.");
+                EnqueueScene02NormalStart();
+            }
+
+            int targetIndex = PlayerPrefs.GetInt("SavedLineIndex", 0);
+
+            // Fast-forward (discard) lines from the queue until we reach the target line
+            int discardedCount = 0;
+            while (dialogueQueue.Count > 0 && discardedCount < targetIndex - 1)
+            {
+                DialogueLine line = dialogueQueue.Dequeue();
+
+                // Execute background modifications instantly as we skip so the visuals catch up!
+                if (line.speaker == "SYSTEM" && line.text.StartsWith("[BG_"))
+                {
+                    HandleSystemCommand(line.text);
+                }
+
+                discardedCount++;
+            }
+
+            currentLineIndex = discardedCount;
+
+            // --- RESTORE CORRECT BACKGROUND MUSIC TRACK ---
+            if (PlayerPrefs.HasKey("SavedMusicTrack"))
+            {
+                string savedMusic = PlayerPrefs.GetString("SavedMusicTrack");
+                RestoreMusicState(savedMusic);
+
+                // Sync current runtime BGM tracker
+                PauseMenu.ActiveMusicTrackName = savedMusic;
+            }
+
+            // Clean up skipping parameters so regular loads don't loop
+            PlayerPrefs.DeleteKey("SavedLineIndex");
+            PlayerPrefs.DeleteKey("SavedScene");
+            PlayerPrefs.DeleteKey("SavedMusicTrack");
             PlayerPrefs.Save();
 
-            Debug.Log("<color=green>Scene02 System:</color> Retained state found. Loading Rooftop Continuation.");
-            EnqueueScene02RooftopContinuation();
+            Debug.Log($"<color=green>Save restorer:</color> Skipped {discardedCount} lines. Visuals and Music Restored. Continuing at line {currentLineIndex + 1}.");
         }
         else
         {
-            Debug.Log("<color=white>Scene02 System:</color> Starting Scene 02 normally from Staircase.");
-            EnqueueScene02NormalStart();
+            // --- RETRIEVE STATE SYSTEM (BOTH STATIC FIELD & PLAYERPREFS FOR NORMAL FLOW) ---
+            bool returningFromPacman = CameFromPacman || (PlayerPrefs.GetInt("CameFromPacman", 0) == 1);
+
+            if (returningFromPacman)
+            {
+                // Reset both keys immediately so reloads don't loop
+                CameFromPacman = false;
+                PlayerPrefs.SetInt("CameFromPacman", 0);
+                PlayerPrefs.Save();
+
+                Debug.Log("<color=green>Scene02 System:</color> Retained state found. Loading Rooftop Continuation.");
+                EnqueueScene02RooftopContinuation();
+                PlayerPrefs.SetInt("Scene02_IsRooftop", 1);
+            }
+            else
+            {
+                Debug.Log("<color=white>Scene02 System:</color> Starting Scene 02 normally from Staircase.");
+                EnqueueScene02NormalStart();
+                PlayerPrefs.SetInt("Scene02_IsRooftop", 0);
+            }
+            PlayerPrefs.Save();
+            currentLineIndex = 0; // Fresh scene start
         }
 
         ShowNextLine();
@@ -111,6 +180,20 @@ public class Scene02 : MonoBehaviour
 
     void Update()
     {
+        // 1. BLOCK SKIPPING IF PAUSED
+        if (PauseMenu.IsPaused) return;
+
+
+        textSpeed = PauseMenu.GetTextDelay();
+
+
+        // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
+        if (hudPauseButtonObject != null)
+        {
+            bool isChoiceActive = choicePanelJump.activeSelf;
+            hudPauseButtonObject.SetActive(!isChoiceActive);
+        }
+
         skipMode = Input.GetKey(KeyCode.LeftControl);
         if (skipMode && !isTyping && !choicePanelRaven.activeSelf && !choicePanelJump.activeSelf) ShowNextLine();
     }
@@ -402,5 +485,32 @@ public class Scene02 : MonoBehaviour
     {
         GameObject[] ports = { cristelNeutral, cristelFrown, cristelSmile, marcLaugh, marcNeutral, marcChide, kuhNeutral, kuhScared, ravenNeutral, darleneNeutral, darleneSad, shadowedDarlene, shadowedRaven, shadowedMarc, shadowedCristel, highschoolCristel };
         foreach (var p in ports) if (p) p.SetActive(false);
+    }
+
+    private void RestoreMusicState(string trackID)
+    {
+        if (musicSource == null) return;
+
+        AudioClip targetClip = null;
+
+        switch (trackID)
+        {
+            case "Angelus":
+                targetClip = angelusPrayer;
+                break;
+            case "HeavyBreathing":
+                targetClip = heavyBreathing;
+                break;
+            default:
+                Debug.LogWarning($"Music Restorer: Track ID '{trackID}' is not mapped inside Scene 02.");
+                break;
+        }
+
+        if (targetClip != null)
+        {
+            musicSource.clip = targetClip;
+            musicSource.Play();
+            Debug.Log($"<color=cyan>Music Restorer:</color> Successfully restored active BGM track: <b>{trackID}</b>");
+        }
     }
 }

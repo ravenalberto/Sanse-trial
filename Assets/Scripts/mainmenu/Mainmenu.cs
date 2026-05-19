@@ -8,14 +8,17 @@ using UnityEngine.Audio;
 using TMPro;
 
 /// <summary>
-/// A clean, serializable data structure representing a VN Save State.
+/// Serializable data structure representing a complete VN Save State.
 /// This gets converted to JSON and stored directly in PlayerPrefs.
+/// Synchronized with PauseMenu's Save Engine to prevent Dialogue Line skipping bugs on load.
 /// </summary>
 [System.Serializable]
 public class SaveSlotData
 {
     public string sceneName;
     public string saveDate;
+    public int lineIndex;          // Tracks the exact dialogue queue line index
+    public string dialoguePreview; // Stores the active dialogue line text for UI previews
     public int darleneTrust;
     public int cristelTrust;
     public int marcChances;
@@ -32,6 +35,7 @@ public class Mainmenu : MonoBehaviour
     public Button loadButton;
     public Button preferencesButton;
     public Button creditsButton;
+    public Button tutorialButton;        // Button to open tutorial screen from Main Menu
     public Button quitButton;
 
     [Header("Sub-Panel Back Buttons")]
@@ -40,6 +44,7 @@ public class Mainmenu : MonoBehaviour
     public Button preferencesBackButton;
     public Button creditsBackButton;
     public Button chapterSelectBackButton;
+    public Button tutorialBackButton;     // Back button inside tutorial panel
 
     [Header("Menu Screen Panels")]
     [Tooltip("The main container panel holding the Start, Load, Settings, and Quit buttons.")]
@@ -52,6 +57,8 @@ public class Mainmenu : MonoBehaviour
     public GameObject creditsPanel;
     [Tooltip("The container panel holding the chapter 1 to 5 buttons.")]
     public GameObject chapterSelectPanel;
+    [Tooltip("The container panel holding the directions mechanics tutorial layout.")]
+    public GameObject tutorialPanel;     // Dedicated Tutorial Panel
 
     [Header("Chapter Select UI Components")]
     [Tooltip("Drag the 5 Chapter Buttons here in order (Index 0 = Chapter 1, Index 4 = Chapter 5)")]
@@ -99,6 +106,7 @@ public class Mainmenu : MonoBehaviour
         if (loadButton != null) loadButton.onClick.AddListener(OpenLoadPanel);
         if (preferencesButton != null) preferencesButton.onClick.AddListener(OpenPreferencesPanel);
         if (creditsButton != null) creditsButton.onClick.AddListener(OpenCreditsPanel);
+        if (tutorialButton != null) tutorialButton.onClick.AddListener(OpenTutorialPanel);
         if (quitButton != null) quitButton.onClick.AddListener(QuitGameApplication);
 
         // Sub-panel Back buttons to return home
@@ -106,6 +114,7 @@ public class Mainmenu : MonoBehaviour
         if (preferencesBackButton != null) preferencesBackButton.onClick.AddListener(ShowMainMenuOnly);
         if (creditsBackButton != null) creditsBackButton.onClick.AddListener(ShowMainMenuOnly);
         if (chapterSelectBackButton != null) chapterSelectBackButton.onClick.AddListener(ShowMainMenuOnly);
+        if (tutorialBackButton != null) tutorialBackButton.onClick.AddListener(ShowMainMenuOnly);
 
         // Dynamic Chapter Select Button Click Actions
         for (int i = 0; i < chapterButtons.Length; i++)
@@ -193,34 +202,39 @@ public class Mainmenu : MonoBehaviour
     }
 
     /// <summary>
+    /// Opens the Tutorial / Direction mechanics panel and hides everything else.
+    /// </summary>
+    public void OpenTutorialPanel()
+    {
+        DeactivateAllSubPanels();
+        if (tutorialPanel != null) tutorialPanel.SetActive(true);
+    }
+
+    /// <summary>
     /// Strictly deactivates all panels to prevent overlapping elements, buttons, and sliders.
     /// </summary>
     private void DeactivateAllSubPanels()
     {
-        // Deactivates panels along with all their nested child objects (buttons, sliders, etc.)
+        // Deactivates panels along with all their nested child objects
         if (mainMenuPanel != null) mainMenuPanel.SetActive(false);
         if (saveLoadPanel != null) saveLoadPanel.SetActive(false);
         if (preferencesPanel != null) preferencesPanel.SetActive(false);
         if (creditsPanel != null) creditsPanel.SetActive(false);
         if (chapterSelectPanel != null) chapterSelectPanel.SetActive(false);
+        if (tutorialPanel != null) tutorialPanel.SetActive(false);
     }
 
     // ==========================================
     // PROGRESSION & CHAPTER LAUNCH LOGIC
     // ==========================================
 
-    /// <summary>
-    /// Refreshes the interactable state of the 5 Chapter Buttons.
-    /// </summary>
     private void UpdateChapterButtonsState()
     {
-        // Chapter 1 is always unlocked by default
         if (chapterButtons.Length > 0 && chapterButtons[0] != null)
         {
             chapterButtons[0].interactable = true;
         }
 
-        // Chapters 2 through 5 check PlayerPrefs to see if they've been visited
         for (int i = 1; i < chapterButtons.Length; i++)
         {
             if (chapterButtons[i] != null)
@@ -232,33 +246,24 @@ public class Mainmenu : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Handles what happens when a player selects an unlocked Chapter.
-    /// </summary>
     public void OnChapterButtonClicked(int chapterNum)
     {
         if (chapterNum == 1)
         {
-            // Starting from Chapter 1 represents starting a fresh story run
             OnNewGameClicked();
         }
         else
         {
-            // Set basic progress variables for skipping logic/story structures
             PlayerPrefs.SetInt("CameFromPacman", 0);
             PlayerPrefs.SetInt("CameFromBlockPuzzle", 0);
             PlayerPrefs.Save();
 
-            // Load the corresponding chapter scene
             string sceneName = GetSceneNameForChapter(chapterNum);
             SceneManager.LoadScene(sceneName);
             Debug.Log($"<color=cyan>Chapter Select:</color> Jumping to Chapter {chapterNum} ({sceneName})");
         }
     }
 
-    /// <summary>
-    /// Maps our game chapter index to the scene name.
-    /// </summary>
     private string GetSceneNameForChapter(int chapterNum)
     {
         switch (chapterNum)
@@ -272,10 +277,6 @@ public class Mainmenu : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Global helper to unlock chapters from narrative files (Scene00VN, Scene01, etc.).
-    /// Call this via: Mainmenu.UnlockChapter(2); when advancing.
-    /// </summary>
     public static void UnlockChapter(int chapterNum)
     {
         PlayerPrefs.SetInt("Unlocked_Chapter_" + chapterNum, 1);
@@ -289,21 +290,46 @@ public class Mainmenu : MonoBehaviour
 
     public void OnNewGameClicked()
     {
-        // Reset dynamic transition and chapter flags for this specific session
         PlayerPrefs.SetInt("CameFromPacman", 0);
         PlayerPrefs.SetInt("CameFromBlockPuzzle", 0);
 
-        // Reset trust scores and chances to Chapter 1 defaults
         PlayerPrefs.SetInt("DarleneTrust", 10);
         PlayerPrefs.SetInt("CristelTrust", 15);
         PlayerPrefs.SetInt("MarcChances", 3);
         PlayerPrefs.SetInt("MarcTrust", 10);
         PlayerPrefs.SetInt("KuhTrust", 10);
         PlayerPrefs.SetInt("RavenTrust", 10);
+
+        PlayerPrefs.DeleteKey("SavedLineIndex");
+        PlayerPrefs.DeleteKey("SavedScene");
         PlayerPrefs.Save();
 
-        // Loads Scene00 (the very beginning of the visual novel)
         SceneManager.LoadScene("Scene00");
+    }
+
+    private string GetChapterFriendlyName(string sceneName)
+    {
+        switch (sceneName)
+        {
+            case "Scene00":
+            case "Scene00VN":
+                return "Chapter 1: The Beginning";
+            case "Scene01":
+                return "Chapter 2: Raven's Eyes";
+            case "Scene02":
+            case "Scene02VN":
+                return "Chapter 3: Kuh's Vision";
+            case "Scene03":
+                return "Chapter 3 Part 2: Comlab Escape";
+            case "Scene04":
+            case "Scene04VN":
+            case "Scene04Events":
+                return "Chapter 4: Broken Reality";
+            case "Scene06":
+                return "Chapter 5: Flashback";
+            default:
+                return "Custom Progress";
+        }
     }
 
     private void UpdateSaveSlotLabels()
@@ -317,14 +343,21 @@ public class Mainmenu : MonoBehaviour
                 SaveSlotData data = JsonUtility.FromJson<SaveSlotData>(json);
                 if (saveSlotTexts[i] != null)
                 {
-                    saveSlotTexts[i].text = $"Slot {i + 1}\n<size=12>{data.sceneName}\n{data.saveDate}</size>";
+                    string chapterName = GetChapterFriendlyName(data.sceneName);
+                    string snippet = data.dialoguePreview;
+                    if (string.IsNullOrEmpty(snippet)) snippet = "...";
+                    if (snippet.Length > 28) snippet = snippet.Substring(0, 25) + "...";
+
+                    saveSlotTexts[i].text = $"<b>Slot {i + 1}</b> - {chapterName}\n" +
+                                           $"<size=11><color=#8AC2F9>{data.saveDate}</color></size>\n" +
+                                           $"<size=12><i>\"{snippet}\"</i></size>";
                 }
             }
             else
             {
                 if (saveSlotTexts[i] != null)
                 {
-                    saveSlotTexts[i].text = $"Slot {i + 1}\n<size=12>Empty Slot</size>";
+                    saveSlotTexts[i].text = $"<b>Slot {i + 1}</b>\n<size=12><color=#A0A0A0>Empty Slot</color></size>";
                 }
             }
         }
@@ -336,11 +369,12 @@ public class Mainmenu : MonoBehaviour
 
         if (isSaveMode)
         {
-            // Gather active scene state to create a progress save file dynamically from PlayerPrefs session
             SaveSlotData data = new SaveSlotData
             {
                 sceneName = SceneManager.GetActiveScene().name,
                 saveDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                lineIndex = 0,
+                dialoguePreview = "Main Menu Checkpoint",
                 darleneTrust = PlayerPrefs.GetInt("DarleneTrust", 10),
                 cristelTrust = PlayerPrefs.GetInt("CristelTrust", 15),
                 marcChances = PlayerPrefs.GetInt("MarcChances", 3),
@@ -363,18 +397,20 @@ public class Mainmenu : MonoBehaviour
                 string json = PlayerPrefs.GetString(key);
                 SaveSlotData data = JsonUtility.FromJson<SaveSlotData>(json);
 
-                // Restore exact stats back into the active PlayerPrefs before reloading the target scene
                 PlayerPrefs.SetInt("DarleneTrust", data.darleneTrust);
                 PlayerPrefs.SetInt("CristelTrust", data.cristelTrust);
                 PlayerPrefs.SetInt("MarcChances", data.marcChances);
                 PlayerPrefs.SetInt("MarcChrust", data.marcTrust);
+                PlayerPrefs.SetInt("MarcTrust", data.marcTrust);
                 PlayerPrefs.SetInt("KuhTrust", data.kuhTrust);
                 PlayerPrefs.SetInt("RavenTrust", data.ravenTrust);
+
+                PlayerPrefs.SetInt("SavedLineIndex", data.lineIndex);
+                PlayerPrefs.SetString("SavedScene", data.sceneName);
                 PlayerPrefs.Save();
 
-                // Load the exact visual novel scene associated with this slot
                 SceneManager.LoadScene(data.sceneName);
-                Debug.Log($"<color=cyan>Load Success:</color> Restored progress from Slot {slotIndex + 1} ({data.sceneName}).");
+                Debug.Log($"<color=cyan>Load Success:</color> Restored progress from Slot {slotIndex + 1} ({data.sceneName}), resuming at Line {data.lineIndex}.");
             }
             else
             {
@@ -418,7 +454,6 @@ public class Mainmenu : MonoBehaviour
     {
         if (masterAudioMixer == null) return;
 
-        // Convert the linear slider values (0 to 1) into decibel values (-80dB to 20dB) for the Mixer
         if (bgmVolumeSlider != null) masterAudioMixer.SetFloat("BgmVolume", Mathf.Log10(bgmVolumeSlider.value) * 20f);
         if (sfxVolumeSlider != null) masterAudioMixer.SetFloat("SfxVolume", Mathf.Log10(sfxVolumeSlider.value) * 20f);
     }

@@ -1,26 +1,37 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 using UnityEngine.Audio;
+using UnityEngine.EventSystems; // Required for integrated click-raycast diagnostics
 using TMPro;
 
 /// <summary>
 /// A reusable, robust mid-game pause controller with dynamic play/pause icon toggles.
-/// Attach this script to a manager object inside your UI Canvas in every scene.
+/// Contains an integrated Raycast Debugger, a multi-slot Save/Load engine, and a 
+/// new dynamic Tutorial overlay for gameplay direction mechanics.
+/// Includes dynamic BGM and Audio Track preservation features upon continuing saved games.
 /// </summary>
 public class PauseMenu : MonoBehaviour
 {
     // Global static flag to block dialogue progression when a pause screen is overlayed
     public static bool IsPaused = false;
 
+    // --- CRITICAL DATA VARIABLES: TRACKS ACTIVE SCENE PROGRESSION ---
+    public static int ActiveLineIndex = 0;
+    public static string ActiveDialogueText = "Starting game...";
+    public static string ActiveMusicTrackName = ""; // Tracks the active BGM identifier globally for saves
+
     [System.Serializable]
     public class PauseSaveData
     {
         public string sceneName;
         public string saveDate;
+        public int lineIndex;
+        public string dialoguePreview;
+        public string musicTrackName; // Preserves the active music state
         public int darleneTrust;
         public int cristelTrust;
         public int marcChances;
@@ -29,14 +40,16 @@ public class PauseMenu : MonoBehaviour
         public int ravenTrust;
     }
 
+    [Header("Diagnostic Settings")]
+    [Tooltip("If true, clicking anywhere on the screen will print which UI element is blocking your mouse click.")]
+    public bool enableRaycastDebugging = true;
+
     [Header("HUD Trigger Button")]
     [Tooltip("Assign the Pause Button located in the top-right of your screen.")]
     public Button hudPauseButton;
 
     [Header("HUD Icon Customization")]
-    [Tooltip("The sprite displayed during active gameplay (Clicking this will pause).")]
     public Sprite pauseIcon;
-    [Tooltip("The sprite displayed when the game is paused (Clicking this will resume).")]
     public Sprite playIcon;
 
     [Header("Pause Root Interfaces")]
@@ -45,17 +58,20 @@ public class PauseMenu : MonoBehaviour
     public GameObject pauseHomeSubPanel;     // Home panel with Resume/Save/Settings/Quit buttons
     public GameObject pauseSaveLoadSubPanel; // Sub-panel containing save slot interfaces
     public GameObject pauseSettingsSubPanel; // Sub-panel containing configuration sliders
+    public GameObject pauseTutorialSubPanel; // New sub-panel containing direction mechanics
 
     [Header("Navigation Buttons")]
     public Button resumeButton;
     public Button openSaveButton;
     public Button openLoadButton;
     public Button openSettingsButton;
+    public Button openTutorialButton;        // New button to open tutorial from home screen
     public Button quitToMainMenuButton;
 
     [Header("Sub-Panel Back Buttons")]
     public Button saveLoadBackButton;
     public Button settingsBackButton;
+    public Button tutorialBackButton;        // New back button to return to pause home
 
     [Header("Save/Load Slot UI Components")]
     public Button[] saveSlots;
@@ -63,8 +79,11 @@ public class PauseMenu : MonoBehaviour
     private bool isSaveMode = false; // If true, clicking slot saves progress. Otherwise, loads.
 
     [Header("Preferences (Settings) Controls")]
+    [Tooltip("Set your text speed slider's Min Value to 0 and Max Value to 1 in the Inspector.")]
     public Slider textSpeedSlider;
+    [Tooltip("Set your volume sliders' Min Value to 0.0001 and Max Value to 1 in the Inspector.")]
     public Slider bgmVolumeSlider;
+    [Tooltip("Set your volume sliders' Min Value to 0.0001 and Max Value to 1 in the Inspector.")]
     public Slider sfxVolumeSlider;
     public AudioMixer masterAudioMixer;
 
@@ -105,15 +124,47 @@ public class PauseMenu : MonoBehaviour
         BindSliderListeners();
 
         // Check for missing UI EventSystem
-        if (UnityEngine.EventSystems.EventSystem.current == null)
+        if (EventSystem.current == null)
         {
             Debug.LogError("<color=red>PAUSE MENU ERROR:</color> No <b>EventSystem</b> found in your active scene hierarchy! Your mouse clicks and UI button interactions will not register without one. Right-click your Hierarchy and choose <b>UI -> Event System</b> immediately.");
         }
     }
 
+    void Update()
+    {
+        // --- INTEGRATED CLICK BLOCK DIAGNOSTIC TOOL ---
+        if (enableRaycastDebugging && Input.GetMouseButtonDown(0))
+        {
+            RunRaycastDiagnostic();
+        }
+    }
+
     /// <summary>
-    /// Binds click listeners programmatically to bypass manual Inspector events.
+    /// GLOBAL HELPER: Translates the Text Speed slider (0.0 to 1.0) into actual dialogue delay seconds.
     /// </summary>
+    public static float GetTextDelay()
+    {
+        float sliderValue = PlayerPrefs.GetFloat("TextSpeed", 0.5f);
+        return Mathf.Lerp(0.08f, 0.002f, sliderValue);
+    }
+
+    private void RunRaycastDiagnostic()
+    {
+        if (EventSystem.current == null) return;
+        PointerEventData pointerData = new PointerEventData(EventSystem.current) { position = Input.mousePosition };
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(pointerData, results);
+
+        if (results.Count > 0)
+        {
+            GameObject hitObject = results[0].gameObject;
+            string path = hitObject.name;
+            Transform t = hitObject.transform.parent;
+            while (t != null) { path = t.name + "/" + path; t = t.parent; }
+            Debug.Log($"<color=cyan>[Pause Diagnostic]:</color> Click intercepted by <b>{hitObject.name}</b> at path: <b>{path}</b>", hitObject);
+        }
+    }
+
     private void BindPauseButtons()
     {
         // HUD Trigger acts as a direct toggle between states
@@ -149,6 +200,11 @@ public class PauseMenu : MonoBehaviour
             openSettingsButton.onClick.RemoveAllListeners();
             openSettingsButton.onClick.AddListener(OpenSettingsSubPanel);
         }
+        if (openTutorialButton != null)
+        {
+            openTutorialButton.onClick.RemoveAllListeners();
+            openTutorialButton.onClick.AddListener(OpenTutorialSubPanel);
+        }
         if (quitToMainMenuButton != null)
         {
             quitToMainMenuButton.onClick.RemoveAllListeners();
@@ -166,6 +222,11 @@ public class PauseMenu : MonoBehaviour
             settingsBackButton.onClick.RemoveAllListeners();
             settingsBackButton.onClick.AddListener(ShowPauseHome);
         }
+        if (tutorialBackButton != null)
+        {
+            tutorialBackButton.onClick.RemoveAllListeners();
+            tutorialBackButton.onClick.AddListener(ShowPauseHome);
+        }
 
         // Save Slot triggers
         for (int i = 0; i < saveSlots.Length; i++)
@@ -179,9 +240,6 @@ public class PauseMenu : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Programmatically binds sliders so preferences write dynamically when dragging.
-    /// </summary>
     private void BindSliderListeners()
     {
         if (textSpeedSlider != null)
@@ -205,9 +263,6 @@ public class PauseMenu : MonoBehaviour
     // PORTAL AND OVERLAY TRANSITIONS
     // ==========================================
 
-    /// <summary>
-    /// Toggles pause state when clicking the top-right HUD button directly.
-    /// </summary>
     public void TogglePauseState()
     {
         if (IsPaused)
@@ -228,7 +283,6 @@ public class PauseMenu : MonoBehaviour
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // Toggle the HUD button image to show the Play icon (meaning "click to play/resume")
         if (hudPauseButton != null && hudPauseButton.image != null && playIcon != null)
         {
             hudPauseButton.image.sprite = playIcon;
@@ -244,11 +298,9 @@ public class PauseMenu : MonoBehaviour
         IsPaused = false;
         Time.timeScale = 1f; // Restore normal game speed
 
-        // Retain standard VN cursor state (usually visible but free)
         Cursor.lockState = CursorLockMode.None;
         Cursor.visible = true;
 
-        // Toggle the HUD button image back to the Pause icon (meaning "click to pause")
         ResetHUDButtonIcon();
 
         DeactivateSubPanels();
@@ -293,16 +345,48 @@ public class PauseMenu : MonoBehaviour
         LoadPreferences();
     }
 
+    private void OpenTutorialSubPanel()
+    {
+        DeactivateSubPanels();
+        if (pauseTutorialSubPanel != null) pauseTutorialSubPanel.SetActive(true);
+    }
+
     private void DeactivateSubPanels()
     {
         if (pauseHomeSubPanel != null) pauseHomeSubPanel.SetActive(false);
         if (pauseSaveLoadSubPanel != null) pauseSaveLoadSubPanel.SetActive(false);
         if (pauseSettingsSubPanel != null) pauseSettingsSubPanel.SetActive(false);
+        if (pauseTutorialSubPanel != null) pauseTutorialSubPanel.SetActive(false);
     }
 
     // ==========================================
-    // MID-GAME PROGRESS RECORDING SYSTEM
+    // 💾 SAVE / LOAD PROGRESS CORE ENGINE
     // ==========================================
+
+    private string GetChapterFriendlyName(string sceneName)
+    {
+        switch (sceneName)
+        {
+            case "Scene00":
+            case "Scene00VN":
+                return "Chapter 1: The Beginning";
+            case "Scene01":
+                return "Chapter 2: Raven's Eyes";
+            case "Scene02":
+            case "Scene02VN":
+                return "Chapter 3: Kuh's Vision";
+            case "Scene03":
+                return "Chapter 3 Part 2: Comlab Escape";
+            case "Scene04":
+            case "Scene04VN":
+            case "Scene04Events":
+                return "Chapter 4: Broken Reality";
+            case "Scene06":
+                return "Chapter 5: Flashback";
+            default:
+                return "Custom Scene Progress";
+        }
+    }
 
     private void UpdateSaveSlotLabels()
     {
@@ -315,14 +399,21 @@ public class PauseMenu : MonoBehaviour
                 PauseSaveData data = JsonUtility.FromJson<PauseSaveData>(json);
                 if (saveSlotTexts[i] != null)
                 {
-                    saveSlotTexts[i].text = $"Slot {i + 1}\n<size=12>{data.sceneName}\n{data.saveDate}</size>";
+                    string chapterName = GetChapterFriendlyName(data.sceneName);
+                    string snippet = data.dialoguePreview;
+                    if (string.IsNullOrEmpty(snippet)) snippet = "...";
+                    if (snippet.Length > 28) snippet = snippet.Substring(0, 25) + "...";
+
+                    saveSlotTexts[i].text = $"<b>Slot {i + 1}</b> - {chapterName}\n" +
+                                           $"<size=11><color=#8AC2F9>{data.saveDate}</color></size>\n" +
+                                           $"<size=12><i>\"{snippet}\"</i></size>";
                 }
             }
             else
             {
                 if (saveSlotTexts[i] != null)
                 {
-                    saveSlotTexts[i].text = $"Slot {i + 1}\n<size=12>Empty Slot</size>";
+                    saveSlotTexts[i].text = $"<b>Slot {i + 1}</b>\n<size=12><color=#A0A0A0>Empty Slot</color></size>";
                 }
             }
         }
@@ -334,11 +425,13 @@ public class PauseMenu : MonoBehaviour
 
         if (isSaveMode)
         {
-            // Capture exact running state details
             PauseSaveData data = new PauseSaveData
             {
                 sceneName = SceneManager.GetActiveScene().name,
                 saveDate = DateTime.Now.ToString("yyyy-MM-dd HH:mm"),
+                lineIndex = ActiveLineIndex,
+                dialoguePreview = ActiveDialogueText,
+                musicTrackName = ActiveMusicTrackName, // Saves the active music track identifier
                 darleneTrust = PlayerPrefs.GetInt("DarleneTrust", 10),
                 cristelTrust = PlayerPrefs.GetInt("CristelTrust", 15),
                 marcChances = PlayerPrefs.GetInt("MarcChances", 3),
@@ -351,7 +444,7 @@ public class PauseMenu : MonoBehaviour
             PlayerPrefs.SetString(key, json);
             PlayerPrefs.Save();
 
-            Debug.Log($"<color=green>Pause Save:</color> Progress saved in Slot {slotIndex + 1}.");
+            Debug.Log($"<color=green>Pause Save:</color> Progress saved in Slot {slotIndex + 1}. Active Music Track: {data.musicTrackName}");
             UpdateSaveSlotLabels();
         }
         else
@@ -361,34 +454,32 @@ public class PauseMenu : MonoBehaviour
                 string json = PlayerPrefs.GetString(key);
                 PauseSaveData data = JsonUtility.FromJson<PauseSaveData>(json);
 
-                // Restore exact stats back into the active PlayerPrefs before reloading the target scene
                 PlayerPrefs.SetInt("DarleneTrust", data.darleneTrust);
                 PlayerPrefs.SetInt("CristelTrust", data.cristelTrust);
                 PlayerPrefs.SetInt("MarcChances", data.marcChances);
                 PlayerPrefs.SetInt("MarcTrust", data.marcTrust);
                 PlayerPrefs.SetInt("KuhTrust", data.kuhTrust);
                 PlayerPrefs.SetInt("RavenTrust", data.ravenTrust);
+
+                PlayerPrefs.SetInt("SavedLineIndex", data.lineIndex);
+                PlayerPrefs.SetString("SavedScene", data.sceneName);
+                PlayerPrefs.SetString("SavedMusicTrack", data.musicTrackName); // Restores active track identifier for scene loading
                 PlayerPrefs.Save();
 
-                // Instantly clean up pausing flags and time systems before loading new scene
                 ResumeGame();
                 SceneManager.LoadScene(data.sceneName);
-                Debug.Log($"<color=cyan>Pause Load:</color> Restored progress from Slot {slotIndex + 1}.");
-            }
-            else
-            {
-                Debug.LogWarning($"Pause Load Warning: Slot {slotIndex + 1} is empty!");
+                Debug.Log($"<color=cyan>Pause Load:</color> Loaded Slot {slotIndex + 1} ({data.sceneName}), resuming at Line {data.lineIndex} and Track {data.musicTrackName}.");
             }
         }
     }
 
     // ==========================================
-    // SYSTEM PREFERENCES (SHARED VALUE KEYS)
+    // ⚙️ SYSTEM SETTINGS / PREFERENCES
     // ==========================================
 
     public void SavePreferences()
     {
-        PlayerPrefs.SetFloat("TextSpeed", textSpeedSlider != null ? textSpeedSlider.value : 0.02f);
+        PlayerPrefs.SetFloat("TextSpeed", textSpeedSlider != null ? textSpeedSlider.value : 0.5f);
         PlayerPrefs.SetFloat("BgmVol", bgmVolumeSlider != null ? bgmVolumeSlider.value : 1.0f);
         PlayerPrefs.SetFloat("SfxVol", sfxVolumeSlider != null ? sfxVolumeSlider.value : 1.0f);
         PlayerPrefs.Save();
@@ -396,7 +487,7 @@ public class PauseMenu : MonoBehaviour
 
     private void LoadPreferences()
     {
-        float textSpeed = PlayerPrefs.GetFloat("TextSpeed", 0.02f);
+        float textSpeed = PlayerPrefs.GetFloat("TextSpeed", 0.5f);
         float bgmVol = PlayerPrefs.GetFloat("BgmVol", 1.0f);
         float sfxVol = PlayerPrefs.GetFloat("SfxVol", 1.0f);
 
@@ -417,14 +508,17 @@ public class PauseMenu : MonoBehaviour
     {
         if (masterAudioMixer == null) return;
 
-        if (bgmVolumeSlider != null) masterAudioMixer.SetFloat("BgmVolume", Mathf.Log10(bgmVolumeSlider.value) * 20f);
-        if (sfxVolumeSlider != null) masterAudioMixer.SetFloat("SfxVolume", Mathf.Log10(sfxVolumeSlider.value) * 20f);
+        float bgmValue = bgmVolumeSlider != null ? Mathf.Max(bgmVolumeSlider.value, 0.0001f) : 1f;
+        float sfxValue = sfxVolumeSlider != null ? Mathf.Max(sfxVolumeSlider.value, 0.0001f) : 1f;
+
+        masterAudioMixer.SetFloat("BgmVolume", Mathf.Log10(bgmValue) * 20f);
+        masterAudioMixer.SetFloat("SfxVolume", Mathf.Log10(sfxValue) * 20f);
     }
 
     public void QuitToMainMenu()
     {
-        // Safely unpause system before changing context
-        ResumeGame();
+        Time.timeScale = 1f;
+        IsPaused = false;
         SceneManager.LoadScene(mainMenuSceneName);
     }
 }
