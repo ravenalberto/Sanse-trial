@@ -5,7 +5,29 @@ using UnityEngine.UI;
 
 public class SimpleDialogue : MonoBehaviour
 {
-    [Header("Prefab References")]
+	[Header("Choice UI")]
+	public GameObject choiceUI;
+
+	public Button redButton;
+	public Button blueButton;
+
+	public TMP_Text redButtonText;
+	public TMP_Text blueButtonText;
+
+	private bool hasChoice = false;
+
+	private string redChoiceResult;
+	private string blueChoiceResult;
+
+	private string[] resultSpeakers;
+	private string[] resultLines;
+
+	private GameObject currentCharacter;
+
+	private string currentCharacterName;
+
+
+	[Header("Prefab References")]
     public GameObject vnUI;            // The parent container (VN_ui)
     public GameObject textBox;         // Your TextBox prefab
     public GameObject nextButton;      // Your NextButton prefab
@@ -19,7 +41,12 @@ public class SimpleDialogue : MonoBehaviour
     private bool isTyping = false;
     private string currentFullLine;
 
-    void Start()
+	private int currentLine = 0;
+
+	private string[] currentLines;
+	private string[] currentSpeakers;
+
+	void Start()
     {
         if (vnUI != null) vnUI.SetActive(false);
         if (nextButton != null) nextButton.SetActive(false);
@@ -28,31 +55,62 @@ public class SimpleDialogue : MonoBehaviour
 
 	public PlayerMovement playerMovement;
 	public CameraFollow cameraFollow;
-	public void ShowDialogue(string speaker, string line)
-    {
+	public void ShowDialogue(
+	string[] speakers,
+	string[] lines,
+	GameObject characterObject
+)
+	{
 		playerMovement.canMove = false;
 		cameraFollow.canLook = false;
 
 		Cursor.lockState = CursorLockMode.None;
 		Cursor.visible = true;
 
+		vnUI.SetActive(true);
+		textBox.SetActive(true);
+
+		currentSpeakers = speakers;
+		currentLines = lines;
+		currentCharacter = characterObject;
+		currentCharacterName = characterObject.name;
 
 
+		currentLine = 0;
 
-		if (vnUI == null) return;
+		ShowCurrentLine();
+	}
 
-        vnUI.SetActive(true);
-        textBox.SetActive(true);
-        nextButton.SetActive(false); // Hide next button while typing
+	public void ShowDialogue(string speaker, string line)
+	{
+		ShowDialogue(
+			new string[] { speaker },
+			new string[] { line },
+			null
+		);
+	}
 
-        nameText.text = speaker;
-        currentFullLine = line;
+	void ShowCurrentLine()
+	{
+		if (currentLine >= currentSpeakers.Length ||
+	currentLine >= currentLines.Length)
+		{
+			Debug.LogError("Dialogue arrays mismatch!");
+			return;
+		}
+		nextButton.SetActive(false);
 
-        if (typingCoroutine != null) StopCoroutine(typingCoroutine);
-        typingCoroutine = StartCoroutine(TypeText(line));
-    }
+		nameText.text = currentSpeakers[currentLine];
 
-    private IEnumerator TypeText(string line)
+		currentFullLine = currentLines[currentLine];
+
+		if (typingCoroutine != null)
+			StopCoroutine(typingCoroutine);
+
+		typingCoroutine = StartCoroutine(TypeText(currentFullLine));
+	}
+
+	private IEnumerator TypeText(string line)
     {
         isTyping = true;
         dialogueText.text = "";
@@ -72,20 +130,267 @@ public class SimpleDialogue : MonoBehaviour
 	{
 		if (isTyping)
 		{
-			// Skip typing and show full text
 			StopCoroutine(typingCoroutine);
+
 			dialogueText.text = currentFullLine;
+
 			isTyping = false;
+
 			nextButton.SetActive(true);
+
+			return;
+		}
+
+		currentLine++;
+
+		if (currentLine < currentLines.Length)
+		{
+			ShowCurrentLine();
 		}
 		else
 		{
-			// Close UI
-			vnUI.SetActive(false);
-
-			// ENABLE PLAYER AGAIN
-			playerMovement.canMove = true;
-			cameraFollow.canLook = true;
+			if (hasChoice)
+			{
+				ShowChoices();
+			}
+			else
+			{
+				EndDialogue();
+			}
 		}
+	}
+	void ShowChoices()
+	{
+		nextButton.SetActive(false);
+
+		choiceUI.SetActive(true);
+	}
+
+	public void SetupChoices(
+	string redText,
+	string blueText
+)
+	{
+		hasChoice = true;
+
+		redButtonText.text = redText;
+		blueButtonText.text = blueText;
+	}
+
+	public void OnRedChoice()
+	{
+		choiceUI.SetActive(false);
+		hasChoice = false;
+
+		if (currentCharacterName.Contains("cristel"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Marc",
+			"Cristel",
+			"Marc",
+			"Cristel"
+			};
+
+			resultLines = new string[]
+			{
+			"Hindi mo naman kailangang manatili sa storya. Wala na eh, deads ka na dito. So... what if eto na yung afterlife?",
+
+			"Pinagsasabi mo nanaman?",
+
+			"May tiwala ka ba sakin Cristel?",
+
+			"... Ok edi go."
+			};
+		}
+
+		else if (currentCharacterName.Contains("raven"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Marc",
+			"Raven"
+			};
+
+			resultLines = new string[]
+			{
+			"Hahaha, bandang kaliwa, tapos may elevator don.",
+
+			"ok thanks marc."
+			};
+		}
+
+		else if (currentCharacterName.Contains("darlene"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Darlene",
+			"Marc", "Darlene", "Marc"
+			};
+
+			resultLines = new string[]
+			{
+			"Edi... hindi pala totoo lahat ng nangyayari?",
+
+			"Totoo naman, kaso nasa game nga lang",
+
+			"Ano mangyayari kapag.. umalis ako dito?",
+
+			"Subukan mo para malaman mo."
+			};
+		}
+
+		else if (currentCharacterName.Contains("kuh"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Kuh"
+			};
+
+			resultLines = new string[]
+			{
+			"Wait omg pwede nako umalis legit?"
+			};
+		}
+		else if (currentCharacterName.ToLower().Contains("marc"))
+		{
+			resultSpeakers = new string[]
+			{
+		"Marc"
+			};
+
+			resultLines = new string[]
+			{
+		"Haha ayoko nga, tinatamad na nga ako magcode ng choice results eh papahirapan mo pa ako."
+			};
+		}
+
+		StartResultDialogue();
+	}
+
+
+	public void OnBlueChoice()
+	{
+		choiceUI.SetActive(false);
+		hasChoice = false;
+
+		// 🔵 CRISTEL
+		if (currentCharacterName.Contains("cristel"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Marc",
+			"Cristel",
+			"Marc"
+			};
+
+			resultLines = new string[]
+			{
+			"Huli man ang lahat, pero hindi nila sisirain ang pangako nila.",
+
+			"Marc...",
+
+			"Kahit ako. Hindi ko tanggap. Pero alam mong hinding hindi ka mawawala sa puso ko."
+			};
+		}
+
+		// 🔵 RAVEN
+		else if (currentCharacterName.Contains("raven"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Marc",
+			"Raven"
+			};
+
+			resultLines = new string[]
+			{
+			"Time heals.",
+
+			"Real af."
+			};
+		}
+
+		// 🔵 DARLENE
+		else if (currentCharacterName.Contains("darlene"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Marc",
+			"Darlene",
+			"Darlene"
+			};
+
+			resultLines = new string[]
+			{
+			"Wala na si Cristel, pero andito pa rin ang presensya nya satin. Hinding hindi mawawala yon.",
+
+			"...",
+
+			"Tama ka..."
+			};
+		}
+
+		// 🔵 KUH
+		else if (currentCharacterName.Contains("kuh"))
+		{
+			resultSpeakers = new string[]
+			{
+			"Kuh"
+			};
+
+			resultLines = new string[]
+			{
+			"Hindi ko kayang iwan tong mundong to.."
+			};
+		}
+
+		else if (currentCharacterName.ToLower().Contains("marc"))
+		{
+			resultSpeakers = new string[]
+			{
+		"Marc"
+			};
+
+			resultLines = new string[]
+			{
+		"Haha ayoko nga, tinatamad na nga ako magcode ng choice results eh papahirapan mo pa ako."
+			};
+		}
+
+		StartResultDialogue();
+	}
+
+	void StartResultDialogue()
+	{
+		currentSpeakers = resultSpeakers;
+		currentLines = resultLines;
+
+		currentLine = 0;
+
+		ShowCurrentLine();
+	}
+
+
+	void EndDialogue()
+	{
+
+		if (currentCharacter != null)
+		{
+			if (
+				!currentCharacterName.Contains("marc")
+)
+			{
+				InteractionProgress.Instance.AddInteraction();
+			}
+			currentCharacter.SetActive(false);
+		}
+		vnUI.SetActive(false);
+
+		playerMovement.canMove = true;
+		cameraFollow.canLook = true;
+
+		Cursor.lockState = CursorLockMode.Locked;
+		Cursor.visible = false;
 	}
 }

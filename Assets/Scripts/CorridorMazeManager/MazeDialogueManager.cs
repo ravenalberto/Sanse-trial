@@ -23,6 +23,8 @@ public class MazeDialogueManager : MonoBehaviour
         Debug.Log("<color=white>MazeDialogueManager:</color> Script Awake and Running.");
     }
 
+
+
     void Start()
     {
         if (dialogueSystem == null) Debug.LogError("MazeDialogueManager: DialogueSystem is NOT assigned!");
