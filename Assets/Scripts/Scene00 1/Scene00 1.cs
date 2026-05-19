@@ -224,7 +224,7 @@ public class Scene001 : MonoBehaviour
             tempQueue.Enqueue(new DialogueLine(
                 "Darlene",
                 "Wha– who are you? Kuya Marc? What is happening?"
-                
+            
             ));
 
             tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_GLASS]"));
@@ -261,8 +261,8 @@ public class Scene001 : MonoBehaviour
             tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_GLASS]"));
             tempQueue.Enqueue(new DialogueLine(
                 "Darlene",
-                "Kuya? Who are you talking to?",
-                darleneNeutral
+                "Kuya? Who are you talking to?"
+              
             ));
 
             tempQueue.Enqueue(new DialogueLine(
