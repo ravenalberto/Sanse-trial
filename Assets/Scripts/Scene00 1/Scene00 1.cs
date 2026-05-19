@@ -66,7 +66,7 @@ public class Scene001 : MonoBehaviour
     
     [Header("Special Effects")]
     public GameObject glassBreakOverlay; // Drag your Glass Shatter Image/UI Overlay Panel here!
-    public AudioClip glassBreakSFX;     // Drag your Glass Shattering Audio Clip here!
+    public GameObject glassBreakSoundObject;     // Drag your Glass Shattering Audio Clip here!
     // Structure to hold default portrait state for crisp coordinate restoration
     private struct PortraitLayoutState
     {
@@ -97,6 +97,7 @@ public class Scene001 : MonoBehaviour
         if (choicePanelMarc != null) choicePanelMarc.SetActive(false);
         if (choicePanelMarcReality != null) choicePanelMarcReality.SetActive(false);
         if (glassBreakOverlay != null) glassBreakOverlay.SetActive(false);
+        if (glassBreakSoundObject != null) glassBreakSoundObject.SetActive(false);
         if (fadeCanvasGroup != null) fadeCanvasGroup.alpha = 0;
 
         // Cache Marc's layout states so we can warp him seamlessly back and forth
@@ -222,8 +223,8 @@ public class Scene001 : MonoBehaviour
 
             tempQueue.Enqueue(new DialogueLine(
                 "Darlene",
-                "Wha– who are you? Kuya Marc? What is happening?",
-                darleneSad
+                "Wha– who are you? Kuya Marc? What is happening?"
+                
             ));
 
             tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_GLASS]"));
@@ -234,7 +235,8 @@ public class Scene001 : MonoBehaviour
                 marcNeutral
             
             ));
-          
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
+
         }
         else if (index == 1)
         {
@@ -242,8 +244,7 @@ public class Scene001 : MonoBehaviour
             tempQueue.Enqueue(new DialogueLine(
 
                 "Darlene",
-                "Do what? Who are you?! What is happening?",
-                darleneSad
+                "Do what? Who are you?! What is happening?"
             ));
 
             tempQueue.Enqueue(new DialogueLine("SYSTEM", "[MARC_CENTER]"));
@@ -252,7 +253,8 @@ public class Scene001 : MonoBehaviour
                 "It’s okay, first impressions are always awkward.",
                 marcLaugh
             ));
-            
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
+
         }
         else
         {
@@ -268,11 +270,13 @@ public class Scene001 : MonoBehaviour
                 "I see, so you don’t want to show yourself yet huh.",
                 marcNeutral
             ));
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
         }
 
         // Return Marc's portrait layout to standard sides before scene change transitions
 
         tempQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE7_END]"));
+        tempQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
 
         ShowNextLine();
     }
@@ -490,8 +494,8 @@ public class Scene001 : MonoBehaviour
                 SceneManager.LoadScene("Scene06");
                 return true;
             case "[PLAY_GLASS_BREAK]":
-                if (glassBreakOverlay != null) glassBreakOverlay.SetActive(true);
-                if (sfxSource != null && glassBreakSFX != null) sfxSource.PlayOneShot(glassBreakSFX);
+                
+                if (glassBreakSoundObject != null) glassBreakSoundObject.SetActive(true);
                 return false;
             case "[BG_GLASS]": StartBGTransition(glassBreakOverlay); return false;
             case "[BG_COMPLAB]": StartBGTransition(complabBG); return false;

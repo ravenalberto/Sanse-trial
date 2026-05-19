@@ -2542,7 +2542,7 @@ MonoBehaviour:
   bgFadeSFX: {fileID: 0}
   bellSFX: {fileID: 0}
   glassBreakOverlay: {fileID: 340441761}
-  glassBreakSFX: {fileID: 8300000, guid: 6b22d65c38f00894bab974d74bf0edc2, type: 3}
+  glassBreakSoundObject: {fileID: 1123821539}
 --- !u!1 &966577843 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 6134824743096641323, guid: 6812d00062e32aa4ca0e7e62b3e049fb, type: 3}
@@ -3118,7 +3118,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 6b22d65c38f00894bab974d74bf0edc2, type: 3}
+  m_Resource: {fileID: 0}
   m_PlayOnAwake: 1
   m_Volume: 1
   m_Pitch: 1
@@ -6214,6 +6214,6 @@ SceneRoots:
   m_Roots:
   - {fileID: 1676871087}
   - {fileID: 580618595}
-  - {fileID: 953897328}
   - {fileID: 1198555876}
+  - {fileID: 953897328}
   - {fileID: 1642830445}
