@@ -7,6 +7,9 @@ using UnityEngine.UI;
 
 public class Scene06 : MonoBehaviour
 {
+
+    private int currentLineIndex = 0; // Tracks dialogue progression
+
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
 
     public void AddTrust(string characterName, int amount)
@@ -37,6 +40,8 @@ public class Scene06 : MonoBehaviour
     public GameObject choicePanelApproach; // Choice panel for Marc's approach style
     public GameObject choicePanelWhy;      // Choice panel for "So why didn't you do anything?" on Rooftop
     public CanvasGroup fadeCanvasGroup;
+    public GameObject hudPauseButtonObject;
+
 
     [Header("Backgrounds")]
     public GameObject currentBG;
@@ -100,6 +105,51 @@ public class Scene06 : MonoBehaviour
         CacheMarcLayouts();
 
         EnqueueScene06();
+
+        if (PlayerPrefs.HasKey("SavedLineIndex") && PlayerPrefs.GetString("SavedScene") == SceneManager.GetActiveScene().name)
+        {
+            int targetIndex = PlayerPrefs.GetInt("SavedLineIndex", 0);
+
+            // Fast-forward (discard) lines from the queue until we reach the target line
+            int discardedCount = 0;
+            while (dialogueQueue.Count > 0 && discardedCount < targetIndex - 1)
+            {
+                DialogueLine line = dialogueQueue.Dequeue();
+
+                // Execute background modifications instantly as we skip so the visuals catch up!
+                if (line.speaker == "SYSTEM" && line.text.StartsWith("[BG_"))
+                {
+                    HandleSystemCommand(line.text);
+                }
+
+                discardedCount++;
+            }
+
+            currentLineIndex = discardedCount;
+
+            // --- RESTORE CORRECT BACKGROUND MUSIC TRACK ---
+            if (PlayerPrefs.HasKey("SavedMusicTrack"))
+            {
+                string savedMusic = PlayerPrefs.GetString("SavedMusicTrack");
+                RestoreMusicState(savedMusic);
+
+                // Sync current runtime BGM tracker
+                PauseMenu.ActiveMusicTrackName = savedMusic;
+            }
+
+            // Clean up skipping parameters so regular loads don't loop
+            PlayerPrefs.DeleteKey("SavedLineIndex");
+            PlayerPrefs.DeleteKey("SavedScene");
+            PlayerPrefs.DeleteKey("SavedMusicTrack");
+            PlayerPrefs.Save();
+
+            Debug.Log($"<color=green>Save restorer:</color> Skipped {discardedCount} lines. Visuals and Music Restored. Continuing at line {currentLineIndex + 1}.");
+        }
+        else
+        {
+            currentLineIndex = 0; // Fresh scene start
+        }
+
         ShowNextLine();
     }
 
@@ -165,6 +215,19 @@ public class Scene06 : MonoBehaviour
 
     void Update()
     {
+
+        textSpeed = PauseMenu.GetTextDelay();
+
+        // 1. BLOCK SKIPPING IF PAUSED
+        if (PauseMenu.IsPaused) return;
+
+        // 2. HIDE PAUSE BUTTON DURING CHOICES (To prevent pausing during decisions)
+        if (hudPauseButtonObject != null)
+        {
+            bool isChoiceActive = choicePanelApproach.activeSelf || choicePanelWhy.activeSelf;
+            hudPauseButtonObject.SetActive(!isChoiceActive);
+        }
+
         skipMode = Input.GetKey(KeyCode.LeftControl);
 
         bool isAnyChoiceActive = (choicePanelApproach != null && choicePanelApproach.activeSelf) ||
@@ -263,6 +326,10 @@ public class Scene06 : MonoBehaviour
 
     public void OnNextClick()
     {
+        if (PauseMenu.IsPaused) return;
+        if (choicePanelApproach.activeSelf || choicePanelWhy.activeSelf) return;
+
+
         bool isAnyChoiceActive = (choicePanelApproach != null && choicePanelApproach.activeSelf) ||
                                  (choicePanelWhy != null && choicePanelWhy.activeSelf);
 
@@ -458,4 +525,28 @@ public class Scene06 : MonoBehaviour
         GameObject[] ports = { marcNeutral, marcLaugh, marcChide, highschoolCristel, collegeMarcNeutral, collegeMarcLaugh, collegeMarcChide };
         foreach (var p in ports) if (p) p.SetActive(false);
     }
+    private void RestoreMusicState(string trackID)
+    {
+        if (musicSource == null) return;
+
+        AudioClip targetClip = null;
+
+        switch (trackID)
+        {
+            case "Bell":
+                targetClip = bellSFX;
+                break;
+            default:
+                Debug.LogWarning($"Music Restorer: Track ID '{trackID}' is not mapped inside Scene 06.");
+                break;
+        }
+
+        if (targetClip != null)
+        {
+            musicSource.clip = targetClip;
+            musicSource.Play();
+            Debug.Log($"<color=cyan>Music Restorer:</color> Successfully restored active BGM track: <b>{trackID}</b>");
+        }
+    }
+
 }
