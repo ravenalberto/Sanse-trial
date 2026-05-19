@@ -318,7 +318,7 @@ public class Scene001 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("", "and Raven ducking towards her desk."));
         dialogueQueue.Enqueue(new DialogueLine("", "Marc, however, his back towards everyone, he’s looking out the window."));
         dialogueQueue.Enqueue(new DialogueLine("", "Darlene didn't pay him much mind."));
-        dialogueQueue.Enqueue(new DialogueLine("", "Maybe he just needs space. Like Cristel. Everything is fine now. Somehow they escaped."));
+        dialogueQueue.Enqueue(new DialogueLine("", "Maybe he just needs space."));
         dialogueQueue.Enqueue(new DialogueLine("", "Like Cristel..."));
         dialogueQueue.Enqueue(new DialogueLine("", "Everything is fine now. Somehow they escaped."));
         dialogueQueue.Enqueue(new DialogueLine("", "But something still doesn't sit right. Darlene shakes her head. She sits near her desk. Everyone looked fine. But she worries about Marc."));
