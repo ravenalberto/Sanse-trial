@@ -4,8 +4,9 @@ public class PlayerMovement : MonoBehaviour
 {
 	public float speed = 5f;
 	public Transform cameraTransform;
+	public bool canMove = true;
 
-Animator anim;
+	Animator anim;
 	SpriteRenderer sr;
 
 	// 🔥 NEW: store last direction
@@ -20,6 +21,8 @@ Animator anim;
 
 	void Update()
 	{
+		if (!canMove) return;
+
 		float h = Input.GetAxisRaw("Horizontal");
 		float v = Input.GetAxisRaw("Vertical");
 

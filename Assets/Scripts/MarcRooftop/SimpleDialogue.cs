@@ -25,9 +25,21 @@ public class SimpleDialogue : MonoBehaviour
         if (nextButton != null) nextButton.SetActive(false);
     }
 
-    public void ShowDialogue(string speaker, string line)
+
+	public PlayerMovement playerMovement;
+	public CameraFollow cameraFollow;
+	public void ShowDialogue(string speaker, string line)
     {
-        if (vnUI == null) return;
+		playerMovement.canMove = false;
+		cameraFollow.canLook = false;
+
+		Cursor.lockState = CursorLockMode.None;
+		Cursor.visible = true;
+
+
+
+
+		if (vnUI == null) return;
 
         vnUI.SetActive(true);
         textBox.SetActive(true);
@@ -55,21 +67,25 @@ public class SimpleDialogue : MonoBehaviour
         nextButton.SetActive(true); // Show the NextButton once finished
     }
 
-    // Call this from the NextButton's OnClick event
-    public void OnNextButtonClicked()
-    {
-        if (isTyping)
-        {
-            // Skip typing and show full text
-            StopCoroutine(typingCoroutine);
-            dialogueText.text = currentFullLine;
-            isTyping = false;
-            nextButton.SetActive(true);
-        }
-        else
-        {
-            // Close UI
-            vnUI.SetActive(false);
-        }
-    }
+	// Call this from the NextButton's OnClick event
+	public void OnNextButtonClicked()
+	{
+		if (isTyping)
+		{
+			// Skip typing and show full text
+			StopCoroutine(typingCoroutine);
+			dialogueText.text = currentFullLine;
+			isTyping = false;
+			nextButton.SetActive(true);
+		}
+		else
+		{
+			// Close UI
+			vnUI.SetActive(false);
+
+			// ENABLE PLAYER AGAIN
+			playerMovement.canMove = true;
+			cameraFollow.canLook = true;
+		}
+	}
 }

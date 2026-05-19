@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -8,6 +8,8 @@ using UnityEngine.UI;
 public class Scene001 : MonoBehaviour
 {
     private Dictionary<string, int> trustScores = new Dictionary<string, int>();
+
+
 
     public void AddTrust(string characterName, int amount)
     {
@@ -20,7 +22,9 @@ public class Scene001 : MonoBehaviour
     private Coroutine bgFadeCoroutine;
     private Coroutine fadeCoroutine;
 
-    public float textSpeed = 0.02f;
+	public GameObject choicePanelMarcReality;
+
+	public float textSpeed = 0.02f;
     public bool skipMode = false;
 
     private DialogueLine currentLine;
@@ -86,7 +90,72 @@ public class Scene001 : MonoBehaviour
         ShowNextLine();
     }
 
-    void Update()
+	public void OnChoice7Selected(int index)
+	{
+		choicePanelMarcReality.SetActive(false);
+
+		usingTempQueue = true;
+		tempQueue.Clear();
+
+		if (index == 0)
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"Cristel",
+				"Yes, none of this is real. You’re inside a game.",
+				cristelNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"Wha– who are you? Kuya Marc? What is happening?",
+				darleneSad
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"Looks like they want you to realize it all along..",
+				marcNeutral
+			));
+		}
+		else if (index == 1)
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"Do what? Who are you?! What is happening?",
+				darleneSad
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"It’s okay, first impressions are always awkward.",
+				marcLaugh
+			));
+		}
+		else
+		{
+			tempQueue.Enqueue(new DialogueLine(
+				"Darlene",
+				"Kuya? Who are you talking to?",
+				darleneNeutral
+			));
+
+			tempQueue.Enqueue(new DialogueLine(
+				"Marc",
+				"I see, so you don’t want to show yourself yet huh.",
+				marcNeutral
+			));
+		}
+
+		// 🔥 IMPORTANT: continue flow
+		tempQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE7_END]"));
+
+		ShowNextLine();
+	}
+
+
+
+
+	void Update()
     {
         skipMode = Input.GetKey(KeyCode.LeftControl);
         if (skipMode && !isTyping && !choicePanelComfort.activeSelf && !choicePanelMarc.activeSelf) ShowNextLine();
@@ -110,16 +179,14 @@ public class Scene001 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("Classmate", "Oy! Late nanaman kayo!"));
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_CLASSROOM]"));
         dialogueQueue.Enqueue(new DialogueLine("Kuh", "Uy pre! Namiss kita grabe!", kuhNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Wow.. everyone�s here�", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Wow.. everyone’s here…", darleneNeutral));
 
-        dialogueQueue.Enqueue(new DialogueLine("", "Darlene�s eyes gaze on Kuh who was greeted by some, Cristel being asked where they went, and Raven ducking towards her desk."));
-        dialogueQueue.Enqueue(new DialogueLine("", "Marc, however, his back towards everyone, he�s looking out the window."));
+        dialogueQueue.Enqueue(new DialogueLine("", "Darlene’s eyes gaze on Kuh who was greeted by some, Cristel being asked where they went, and Raven ducking towards her desk."));
+        dialogueQueue.Enqueue(new DialogueLine("", "Marc, however, his back towards everyone, he’s looking out the window."));
         dialogueQueue.Enqueue(new DialogueLine("", "Darlene didn't pay him much mind. Maybe he just needs space. Like Cristel. Everything is fine now. Somehow they escaped."));
         dialogueQueue.Enqueue(new DialogueLine("", "But something still doesn't sit right. Darlene shakes her head. She sits near her desk. Everyone looked fine. But she worries about Marc."));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "I wonder if he really is okay�", darleneSad));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "I wonder if he really is okay…", darleneSad));
 
-        dialogueQueue.Enqueue(new DialogueLine("", "Then she couldn't keep it anymore. She walks towards Marc."));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Kuya.. okay ka lang ba?", darleneNeutral));
 
         // --- ACT II: ATTEMPT TO REPAIR CRISTEL'S HEART ---
         dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[FADE_OUT]"));
@@ -137,7 +204,7 @@ public class Scene001 : MonoBehaviour
 
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "Siguro..", cristelNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "Cristel, naniniwala akong hanggang dulo magkakasama pa rin tayong lahat. Wag kayong mawalan ng hope.", darleneNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Basta promise me, you�ll stick with us til the end. Okay?", darleneNeutral));
+        dialogueQueue.Enqueue(new DialogueLine("Darlene", "Basta promise me, you’ll stick with us til the end. Okay?", darleneNeutral));
 
         dialogueQueue.Enqueue(new DialogueLine("", "Darlene extends her pinky finger. For a moment, Cristel stares at it before slowly raising her own."));
         dialogueQueue.Enqueue(new DialogueLine("Cristel", "Promise, Dar.", cristelSmile));
@@ -155,13 +222,19 @@ public class Scene001 : MonoBehaviour
         dialogueQueue.Enqueue(new DialogueLine("Marc", "Di ka naman siguro nauto na eto talaga yung nangyari, noh dar?", marcNeutral));
         dialogueQueue.Enqueue(new DialogueLine("Darlene", "What are you talking about, Kuya?", darleneSad));
 
-        // Choice 8: Responding to Marc's warnings
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_MARC_WARN]"));
+		dialogueQueue.Enqueue(new DialogueLine("", "Marc turns towards you.", marcNeutral));
 
-        dialogueQueue.Enqueue(new DialogueLine("Marc", "Huwag mo kalilimutan, Dar... Ang pinto ay bukas lamang para sa naniniwala.", marcNeutral));
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_GLITCH]"));
-        dialogueQueue.Enqueue(new DialogueLine("", "For a split second, the warm sunset background flickers violently into absolute darkness."));
-        dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_SCENE06]"));
+		dialogueQueue.Enqueue(new DialogueLine("Marc", "Right? None of them had actually listened to you.", marcNeutral));
+
+		dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_7]"));
+
+		// Choice 8: Responding to Marc's warnings
+		//dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[CHOICE_MARC_WARN]"));
+
+       // dialogueQueue.Enqueue(new DialogueLine("Marc", "Huwag mo kalilimutan, Dar... Ang pinto ay bukas lamang para sa naniniwala.", marcNeutral));
+       // dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[SFX_GLITCH]"));
+       // dialogueQueue.Enqueue(new DialogueLine("", "For a split second, the warm sunset background flickers violently into absolute darkness."));
+       // dialogueQueue.Enqueue(new DialogueLine("SYSTEM", "[GOTO_SCENE06]"));
     }
 
     public void OnComfortSelected(int index)
@@ -212,22 +285,26 @@ public class Scene001 : MonoBehaviour
 
     public void OnNextClick()
     {
-        if (isTyping)
-        {
-            StopCoroutine(typingCoroutine);
-            dialogueText.text = currentLine.text;
-            isTyping = false;
-            nextButton.SetActive(true);
-            return;
-        }
-        ShowNextLine();
+		if (choicePanelMarcReality.activeSelf ||
+	choicePanelComfort.activeSelf ||
+	choicePanelMarc.activeSelf)
+		{
+			return; // 🚨 BLOCK ALL DIALOGUE INPUT
+		}
+		ShowNextLine();
     }
 
     void ShowNextLine()
     {
         if (dialogueQueue.Count == 0 && tempQueue.Count == 0) return;
+		if (choicePanelMarcReality.activeSelf ||
+	        choicePanelComfort.activeSelf ||
+	        choicePanelMarc.activeSelf)
+		{
+			return; // stop VN while choosing
+		}
 
-        DialogueLine line;
+		DialogueLine line;
         if (usingTempQueue && tempQueue.Count > 0)
         {
             line = tempQueue.Dequeue();
@@ -279,7 +356,14 @@ public class Scene001 : MonoBehaviour
             case "[FADE_IN]":
                 StartFade(0.0f);
                 return true;
-            case "[BG_COMPLAB]": StartBGTransition(complabBG); return false;
+			case "[CHOICE_7]":
+				choicePanelMarcReality.SetActive(true);
+				nextButton.SetActive(false);
+				return true;
+			case "[CHOICE7_END]":
+				SceneManager.LoadScene("Scene06");
+				return true;
+			case "[BG_COMPLAB]": StartBGTransition(complabBG); return false;
             case "[BG_CLASSROOM]": StartBGTransition(classroomBG); return false;
             case "[BG_HALLWAY]": StartBGTransition(hallwayBG); return false;
             case "[BG_BLACK]": StartBGTransition(blackBG); return false;

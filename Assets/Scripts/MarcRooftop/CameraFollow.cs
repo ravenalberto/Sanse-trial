@@ -3,6 +3,7 @@ using UnityEngine;
 public class CameraFollow : MonoBehaviour
 {
 	public Transform target;
+	public bool canLook = true;
 
 	public Vector3 targetOffset = new Vector3(0, 1.5f, 0);
 
@@ -26,6 +27,8 @@ public class CameraFollow : MonoBehaviour
 
 	void LateUpdate()
 	{
+		if (!canLook) return;
+
 		if (target == null) return;
 
 		float mouseX = Input.GetAxis("Mouse X") * mouseSensitivity * Time.deltaTime;
