@@ -2135,9 +2135,9 @@ MonoBehaviour:
   marcChide: {fileID: 392248658}
   marcNeutral: {fileID: 925441761}
   cristelSmile: {fileID: 1880162875}
-  sfxSource: {fileID: 0}
-  bgFadeSFX: {fileID: 0}
-  glitchSFX: {fileID: 0}
+  sfxSource: {fileID: 119889001}
+  bgFadeSFX: {fileID: 8300000, guid: bca2fbf6e794ede448d666344b156df5, type: 3}
+  glitchSFX: {fileID: 8300000, guid: 77e6a7967d0cbaf4a93683fd4deff7a3, type: 3}
 --- !u!4 &953897328
 Transform:
   m_ObjectHideFlags: 0
@@ -3686,9 +3686,9 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: a61cd68d77545c64f9757d4dc0e25732, type: 3}
+  m_Resource: {fileID: 8300000, guid: d3bf6aa1ec32b034596c4ddad222d2d1, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.247
   m_Pitch: 1
   Loop: 0
   Mute: 0
@@ -5845,7 +5845,8 @@ PrefabInstance:
       value: PauseOverlay
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 6047002850646480728, guid: 6873b8975f062bb42a612206aece1a97, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 6873b8975f062bb42a612206aece1a97, type: 3}

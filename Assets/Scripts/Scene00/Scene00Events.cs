@@ -523,6 +523,11 @@ public class Scene00VN : MonoBehaviour
             StartBGTransition(uncleJohnsBG);
             return false;
         }
+        if (command == "[BG_BATHROOM")
+        {
+            StartBGTransition(BathroomBG);
+            return false;
+        }
         else if (command == "[BG_INSIDE]")
         {
             StartBGTransition(insideuncleJohnsBG);
@@ -863,6 +868,7 @@ public class Scene00VN : MonoBehaviour
 
         else if (command == "[SCENE_BATHROOM]")
         {
+            tempQueue.Enqueue(new DialogueLine("SYSTEM", "[BG_BATHROOM]"));
             tempQueue.Enqueue(new DialogueLine("Cristel", "what the heck is wrong with me am i being haunted by ghosts?"));
             tempQueue.Enqueue(new DialogueLine("Cristel", "He’s right.. Its nothing this is nothing.."));
             tempQueue.Enqueue(new DialogueLine("Cristel", "I’m fine", cristelSmile));
