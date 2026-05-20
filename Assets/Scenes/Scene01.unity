@@ -3623,17 +3623,17 @@ MonoBehaviour:
   phoneBG: {fileID: 2009512799}
   phonemessageBG: {fileID: 1194652727}
   fadeCanvasGroup: {fileID: 0}
-  sfxSource: {fileID: 0}
-  musicSource: {fileID: 0}
-  angelusSFX: {fileID: 0}
-  intercomSFX: {fileID: 0}
-  glitchSFX: {fileID: 0}
-  bellSFX: {fileID: 0}
-  stretchSFX: {fileID: 0}
+  sfxSource: {fileID: 119889001}
+  musicSource: {fileID: 1543949579}
+  angelusSFX: {fileID: 8300000, guid: 1572b8e0a90a19d44922a578db3d692d, type: 3}
+  intercomSFX: {fileID: 8300000, guid: b20601c096859da46ba3448b5207ae27, type: 3}
+  glitchSFX: {fileID: 8300000, guid: 77e6a7967d0cbaf4a93683fd4deff7a3, type: 3}
+  bellSFX: {fileID: 8300000, guid: a61cd68d77545c64f9757d4dc0e25732, type: 3}
+  stretchSFX: {fileID: 8300000, guid: 6b22d65c38f00894bab974d74bf0edc2, type: 3}
   bgFadeSFX: {fileID: 0}
-  staticCrackleSFX: {fileID: 0}
-  staticCutSFX: {fileID: 0}
-  notificationSFX: {fileID: 0}
+  staticCrackleSFX: {fileID: 8300000, guid: b57c46e65459ffd4084bf7d687d9ed56, type: 3}
+  staticCutSFX: {fileID: 8300000, guid: 4fea8b27440587d4dbca6e264515f1d8, type: 3}
+  notificationSFX: {fileID: 8300000, guid: 26280a93f5452b143a1deef95731faad, type: 3}
   cristelNeutral: {fileID: 349206754}
   cristelFrown: {fileID: 653311533}
   cristelSmile: {fileID: 1880162875}
@@ -5985,9 +5985,9 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 0}
+  m_Resource: {fileID: 8300000, guid: d3bf6aa1ec32b034596c4ddad222d2d1, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 1
+  m_Volume: 0.247
   m_Pitch: 1
   Loop: 0
   Mute: 0
