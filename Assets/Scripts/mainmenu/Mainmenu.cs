@@ -76,7 +76,8 @@ public class Mainmenu : MonoBehaviour
     public Slider bgmVolumeSlider;
     public Slider sfxVolumeSlider;
     public AudioMixer masterAudioMixer; // Optional: Link your AudioMixer asset here
-
+    public AudioSource bgmSource;
+    public AudioClip menuBGM;
     void Start()
     {
         // Unlock and make the mouse cursor visible for the menus
@@ -94,6 +95,14 @@ public class Mainmenu : MonoBehaviour
 
         // Initialize the visual state of the save slots
         UpdateSaveSlotLabels();
+
+        // Play the menu music automatically
+        if (bgmSource != null && menuBGM != null && !bgmSource.isPlaying)
+        {
+            bgmSource.clip = menuBGM;
+            bgmSource.loop = true;
+            bgmSource.Play();
+        }
     }
 
     /// <summary>
